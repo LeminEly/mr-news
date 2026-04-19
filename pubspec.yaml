@@ -1,11 +1,11 @@
 name: mauritanie_news
 description: Plateforme d'actualités mauritanienne — App mobile Flutter
-publish_to: 'none'
+publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.2.0 <4.0.0'
-  flutter: '>=3.16.0'
+  sdk: ">=3.2.0 <4.0.0"
+  flutter: ">=3.16.0"
 
 dependencies:
   flutter:
@@ -32,7 +32,7 @@ dependencies:
   cached_network_image: ^3.3.1
   flutter_svg: ^2.0.10+1
   shimmer: ^3.0.0
-  fluttertoast: ^8.2.5
+  fluttertoast: ^9.0.0 # ✅ Mis à jour (8.x incompatible avec Flutter récent)
   gap: ^3.0.1
 
   # LOCAL STORAGE
@@ -44,9 +44,9 @@ dependencies:
 
   # UTILITIES
   uuid: ^4.4.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   url_launcher: ^6.3.0
-  share_plus: ^9.0.0
+  share_plus: ^10.0.0 # ✅ Préfixe ^ ajouté
   connectivity_plus: ^6.0.3
   equatable: ^2.0.5
   freezed_annotation: ^2.4.4
