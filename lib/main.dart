@@ -1,36 +1,105 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:intl/date_symbol_data_local.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:mauritanie_news/features/agency/ui/agency_dashboard_screen.dart';
-import 'package:mauritanie_news/shared/theme/app_theme.dart';
+import 'core/constants/app_constants.dart';
+import 'shared/theme/app_theme.dart';
+import 'app/router.dart';
+import 'core/constants/env.g.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('fr_FR', null);
-  runApp(const MauritanieNewsApp());
+
+  // Orientation portrait
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  // Init Supabase 
+  await Supabase.initialize(
+    url:     Env.appSupabaseUrl,
+    anonKey: Env.appSupabaseAnonKey,
+    debug: true, // true en développement
+  );
+
+  // Lire la langue sauvegardée
+  final prefs = await SharedPreferences.getInstance();
+  final savedLang = prefs.getString(AppConstants.keyAppLanguage);
+  final onboardingDone = prefs.getBool(AppConstants.keyOnboardingDone) ?? false;
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        // Injecter la langue initiale
+        initialLocaleProvider.overrideWithValue(
+          savedLang != null ? Locale(savedLang) : null,
+        ),
+        initialOnboardingDoneProvider.overrideWithValue(onboardingDone),
+      ],
+      child: const MauritanieNewsApp(),
+    ),
+  );
 }
 
-class MauritanieNewsApp extends StatelessWidget {
+// Providers d'initialisation 
+final initialLocaleProvider = Provider<Locale?>((ref) => null);
+final initialOnboardingDoneProvider = Provider<bool>((ref) => false);
+
+// App locale
+final appLocaleProvider = StateProvider<Locale>((ref) {
+  return ref.watch(initialLocaleProvider) ?? const Locale('fr');
+});
+
+// 
+// ROOT APP WIDGET
+// 
+
+class MauritanieNewsApp extends ConsumerWidget {
   const MauritanieNewsApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Mauritanie News',
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+    final locale = ref.watch(appLocaleProvider);
+    final fontFamily = locale.languageCode == 'ar'
+        ? AppTextStyles.fontAr
+        : AppTextStyles.fontFr;
+
+    return MaterialApp.router(
+      title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      locale: const Locale('fr'),
-      supportedLocales: const [
-        Locale('fr'),
-        Locale('ar'),
-      ],
+
+      // Thème 
+      theme: AppTheme.light(fontFamily: fontFamily),
+      darkTheme: AppTheme.dark(fontFamily: fontFamily),
+      themeMode: ThemeMode.system,
+
+      // Localisation
+      locale: locale,
+      supportedLocales: const [Locale('ar'), Locale('fr')],
       localizationsDelegates: const [
+        // AppLocalizations.delegate, // ajouter avec flutter gen-l10n
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      home: const AgencyDashboardScreen(),
+
+      // RTL auto selon la locale
+      builder: (context, child) {
+        return Directionality(
+          textDirection: locale.languageCode == 'ar'
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          child: child!,
+        );
+      },
+
+      // Navigation
+      routerConfig: router,
     );
   }
 }
