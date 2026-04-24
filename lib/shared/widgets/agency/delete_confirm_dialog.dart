@@ -1,21 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
+import 'package:mauritanie_news/features/feed/providers/feed_providers.dart';
 
-/// Dialogue de confirmation de suppression (mock — pas de backend).
-class DeleteConfirmDialog extends StatefulWidget {
+/// Dialogue de confirmation de suppression (Supabase).
+class DeleteConfirmDialog extends ConsumerStatefulWidget {
   const DeleteConfirmDialog({
     super.key,
+    required this.articleId,
     required this.articleTitle,
   });
 
+  final String articleId;
   final String articleTitle;
 
   @override
-  State<DeleteConfirmDialog> createState() => _DeleteConfirmDialogState();
+  ConsumerState<DeleteConfirmDialog> createState() => _DeleteConfirmDialogState();
 }
 
-class _DeleteConfirmDialogState extends State<DeleteConfirmDialog>
+class _DeleteConfirmDialogState extends ConsumerState<DeleteConfirmDialog>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse;
   bool _loading = false;
@@ -36,21 +40,34 @@ class _DeleteConfirmDialogState extends State<DeleteConfirmDialog>
   }
 
   Future<void> _onDelete() async {
-    // TODO: connect to Supabase — supprimer l’article côté serveur.
     setState(() => _loading = true);
-    await Future<void>.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    Navigator.of(context).pop(true);
-    messenger.showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.success,
-        content: Text(
-          'Article supprimé',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+    try {
+      await ref.read(agencyRepositoryProvider).deleteArticle(widget.articleId);
+      if (!mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).pop(true);
+      messenger.showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.success,
+          content: Text(
+            'Article supprimé',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+          ),
         ),
-      ),
-    );
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text(
+            'Erreur lors de la suppression',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+          ),
+        ),
+      );
+    }
   }
 
   @override

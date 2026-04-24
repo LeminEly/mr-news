@@ -77,7 +77,7 @@ class ReactionRepository {
           .maybeSingle();
 
       if (response == null) return const ReactionCounts();
-      return ReactionCounts.fromJson(response as Map<String, dynamic>);
+      return ReactionCounts.fromJson(response);
     } catch (e) {
       throw AppError.fromSupabase(e);
     }

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
-class AgencyRegisterScreen extends StatelessWidget {
-  const AgencyRegisterScreen({super.key});
+class AgencyLoginScreen extends StatelessWidget {
+  const AgencyLoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,7 +13,7 @@ class AgencyRegisterScreen extends StatelessWidget {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         title: Text(
-          'Inscription agence',
+          'Connexion agence',
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
         ),
       ),

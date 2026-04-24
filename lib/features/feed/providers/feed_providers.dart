@@ -5,8 +5,7 @@ import '../../agency/data/agency_repository.dart';
 import '../../reactions/data/reaction_repository.dart';
 import '../../reports/data/report_repository.dart';
 import '../../admin/data/admin_repository.dart';
-import '../../../shared/models/article_model.dart';
-import '../../../shared/models/category_model.dart';
+import '../../../shared/models/models.dart';
 
 // SUPABASE CLIENT
 
@@ -45,7 +44,7 @@ final feedRepositoryProvider = Provider<FeedRepository>((ref) {
 });
 
 final agencyRepositoryProvider = Provider<AgencyRepository>((ref) {
-  return AgencyRepository(ref.watch(supabaseClientProvider));
+  return AgencyRepository(client: ref.watch(supabaseClientProvider));
 });
 
 final reactionRepositoryProvider = Provider<ReactionRepository>((ref) {
@@ -57,7 +56,7 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 });
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
-  return AdminRepository(ref.watch(supabaseClientProvider));
+  return AdminRepository(client: ref.watch(supabaseClientProvider));
 });
 
 // FEED STATE 

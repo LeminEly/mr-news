@@ -4,6 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/feed/providers/feed_providers.dart';
 
+import '../features/feed/ui/feed_screen.dart';
+import '../features/onboarding/ui/onboarding_screen.dart';
+import '../features/agency/ui/agency_register.dart';
+import '../features/agency/ui/agency_login.dart';
+import '../features/agency/ui/agency_pending.dart';
+import '../features/agency/ui/publish_article_screen.dart';
+import '../features/agency/ui/agency_profile.dart';
+import '../shared/models/agency_model.dart';
+import '../features/admin/ui/stats_dashboard.dart';
+import '../features/admin/ui/agency_validation.dart';
+import '../features/admin/ui/reports_management.dart';
+import '../features/admin/ui/categories_management.dart';
+import '../features/admin/ui/agencies_list.dart';
+import '../features/webview/ui/article_webview_screen.dart';
+
 // Route names
 class AppRoutes {
   static const String splash          = '/';
@@ -26,7 +41,7 @@ class AppRoutes {
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
+  ref.watch(authStateProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
@@ -94,11 +109,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'article',
         builder: (context, state) {
           final extra = state.extra as Map<String, String>;
-          return ArticleWebViewScreen(
-            url:   extra['url']!,
-            title: extra['title']!,
-            articleId: extra['articleId']!,
-          );
+          return ArticleWebViewScreen(url: extra['url']!, title: extra['title']!);
         },
       ),
 
@@ -127,31 +138,33 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.agencyDashboard,
         name: 'agency-dashboard',
-        builder: (context, state) => const AgencyDashboardScreen(),
+        builder: (context, state) => const AgencyLoginScreen(),
       ),
 
       // Agence : Publier
       GoRoute(
         path: AppRoutes.agencyPublish,
         name: 'agency-publish',
-        builder: (context, state) => const PublishArticleScreen(),
+        builder: (context, state) => const AgencyPublishGate(),
       ),
 
       // Agence : Modifier article
       GoRoute(
         path: AppRoutes.agencyEditArticle,
         name: 'agency-edit-article',
-        builder: (context, state) {
-          final articleId = state.extra as String;
-          return EditArticleScreen(articleId: articleId);
-        },
+        builder: (context, state) => const Scaffold(),
       ),
 
       // Agence : Profil
       GoRoute(
         path: AppRoutes.agencyProfile,
         name: 'agency-profile',
-        builder: (context, state) => const AgencyProfileScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          return AgencyProfileScreen(
+            agency: extra is AgencyModel ? extra : null,
+          );
+        },
       ),
 
       // Admin : Dashboard
@@ -198,88 +211,27 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-// Ces imports seront résolus une fois les screens créés
-
-class SplashScreen extends StatelessWidget {
+class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold(
-    body: Center(child: CircularProgressIndicator()),
-  );
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class OnboardingScreen extends StatelessWidget {
-  const OnboardingScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.go(AppRoutes.feed);
+    });
+  }
 
-class FeedScreen extends StatelessWidget {
-  const FeedScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class ArticleWebViewScreen extends StatelessWidget {
-  final String url, title, articleId;
-  const ArticleWebViewScreen({super.key, required this.url, required this.title, required this.articleId});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyRegisterScreen extends StatelessWidget {
-  const AgencyRegisterScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyLoginScreen extends StatelessWidget {
-  const AgencyLoginScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyPendingScreen extends StatelessWidget {
-  const AgencyPendingScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyDashboardScreen extends StatelessWidget {
-  const AgencyDashboardScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class PublishArticleScreen extends StatelessWidget {
-  const PublishArticleScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class EditArticleScreen extends StatelessWidget {
-  final String articleId;
-  const EditArticleScreen({super.key, required this.articleId});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyProfileScreen extends StatelessWidget {
-  const AgencyProfileScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AdminDashboardScreen extends StatelessWidget {
-  const AdminDashboardScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgencyValidationScreen extends StatelessWidget {
-  const AgencyValidationScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class ReportsManagementScreen extends StatelessWidget {
-  const ReportsManagementScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class CategoriesManagementScreen extends StatelessWidget {
-  const CategoriesManagementScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
-}
-
-class AgenciesListScreen extends StatelessWidget {
-  const AgenciesListScreen({super.key});
-  @override Widget build(BuildContext context) => const Scaffold();
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
 }

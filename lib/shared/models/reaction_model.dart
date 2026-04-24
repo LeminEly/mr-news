@@ -1,10 +1,8 @@
-
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'models.dart';
 
 part 'reaction_model.freezed.dart';
 part 'reaction_model.g.dart';
-
-enum EmojiType { like, wow, sad, angry, fire }
 
 @freezed
 class ReactionModel with _$ReactionModel {
@@ -14,7 +12,7 @@ class ReactionModel with _$ReactionModel {
     required String deviceId,
     required EmojiType emojiType,
     required DateTime createdAt,
-    DateTime? updatedAt,
+    required DateTime updatedAt,
   }) = _ReactionModel;
 
   factory ReactionModel.fromJson(Map<String, dynamic> json) =>

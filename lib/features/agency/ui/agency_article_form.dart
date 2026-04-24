@@ -11,25 +11,52 @@ import 'package:uuid/uuid.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
-import 'package:mauritanie_news/features/agency/ui/mock_article.dart';
+import 'package:mauritanie_news/shared/models/article_model.dart';
+import 'package:mauritanie_news/shared/models/category_model.dart';
 
 /// Mode du formulaire agence (publication ou édition).
 enum AgencyFormMode { publish, edit }
 
-/// Formulaire article (mock) — partagé publication / édition.
+typedef AgencyArticleSubmit = Future<bool> Function({
+  required String title,
+  required String sourceUrl,
+  String? coverImageUrl,
+  required String categoryId,
+  required ArticleLanguage language,
+});
+
+/// Envoie une image choisie sur l’appareil vers le Storage ; retourne l’URL publique.
+typedef UploadPickedCover = Future<String> Function(XFile file);
+
+/// Formulaire article — partagé publication / édition.
 class AgencyArticleForm extends StatefulWidget {
-  const AgencyArticleForm({
+  // ignore: prefer_const_constructors_in_immutables — [parentCoverUrlNotifier] empêche const.
+  AgencyArticleForm({
     super.key,
     required this.mode,
+    required this.categories,
     this.initial,
-    required this.onPrimarySuccess,
+    required this.onSubmit,
     this.onCancel,
+    this.hideCoverSection = false,
+    this.parentCoverUrlNotifier,
+    this.uploadPickedCover,
   });
 
   final AgencyFormMode mode;
-  final MockArticle? initial;
-  final void Function(MockArticle article) onPrimarySuccess;
+  final List<CategoryModel> categories;
+  final ArticleModel? initial;
+  final AgencyArticleSubmit onSubmit;
   final VoidCallback? onCancel;
+
+  /// Si vrai, la zone image / galerie / URL est gérée par l’écran parent (ex. upload Storage).
+  final bool hideCoverSection;
+
+  /// URL publique de couverture (parent) ; lu à la soumission et pour l’aperçu.
+  final ValueNotifier<String?>? parentCoverUrlNotifier;
+
+  /// Requis pour enregistrer une image prise depuis la galerie (hors mode parent URL).
+  final UploadPickedCover? uploadPickedCover;
 
   @override
   State<AgencyArticleForm> createState() => _AgencyArticleFormState();
@@ -44,23 +71,21 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
   late final String _heroId;
   XFile? _pickedFile;
   String? _coverNetworkUrl;
-  String _language = 'fr';
-  AgencyCategoryOption? _category = kAgencyCategories.first;
+  ArticleLanguage _language = ArticleLanguage.fr;
+  String? _categoryId;
 
   bool _loading = false;
   bool _success = false;
 
   late final AnimationController _checkCtrl;
 
-  static const String _staticAgencyName = 'Agence Mauritanie Presse';
-  static const String _staticAgencyLogo = 'https://picsum.photos/seed/agency2/100/100';
-
-  bool get _hasCover {
-    if (!kIsWeb && _pickedFile != null) return true;
-    final u = _coverNetworkUrl?.trim() ?? '';
-    if (u.isNotEmpty) return true;
-    final init = widget.initial?.coverImageUrl;
-    return init != null && init.isNotEmpty;
+  CategoryModel? get _selectedCategory {
+    final id = _categoryId;
+    if (id == null) return null;
+    for (final c in widget.categories) {
+      if (c.id == id) return c;
+    }
+    return null;
   }
 
   @override
@@ -73,17 +98,26 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
       _urlCtrl.text = initial.sourceUrl;
       _language = initial.language;
       _coverNetworkUrl = initial.coverImageUrl;
-      _category = categoryOptionForArticle(initial) ?? kAgencyCategories.first;
+      _categoryId = initial.categoryId;
+    } else {
+      _categoryId = widget.categories.isEmpty ? null : widget.categories.first.id;
     }
 
     _checkCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),
     );
+
+    widget.parentCoverUrlNotifier?.addListener(_onParentCoverChanged);
+  }
+
+  void _onParentCoverChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
+    widget.parentCoverUrlNotifier?.removeListener(_onParentCoverChanged);
     _titleCtrl.dispose();
     _urlCtrl.dispose();
     _checkCtrl.dispose();
@@ -103,7 +137,6 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
   }
 
   Future<void> _pickImage() async {
-    // TODO: connect to Supabase — upload fichier vers le storage après choix.
     final picker = ImagePicker();
     final file = await picker.pickImage(source: ImageSource.gallery);
     if (file != null) {
@@ -170,73 +203,123 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
   }
 
   Future<void> _submit() async {
-    if (!_hasCover) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.warning,
-          content: Text(
-            'Ajoutez une image de couverture',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
-          ),
-        ),
-      );
-      return;
-    }
     if (!_formKey.currentState!.validate()) return;
-    if (_category == null) return;
+    final categoryId = _categoryId;
+    if (categoryId == null) return;
 
     setState(() {
       _loading = true;
       _success = false;
     });
 
-    await Future<void>.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-
-    setState(() {
-      _loading = false;
-      _success = true;
-    });
-    await _checkCtrl.forward(from: 0);
-    await Future<void>.delayed(const Duration(milliseconds: 220));
-    if (!mounted) return;
-
-    final now = DateTime.now();
-    final cat = _category!;
-    final isEdit = widget.mode == AgencyFormMode.edit;
-    final base = widget.initial;
-
-    final coverResolved = () {
-      if (!kIsWeb && _pickedFile != null) {
-        return _coverNetworkUrl ??
-            base?.coverImageUrl ??
-            'https://picsum.photos/seed/$_heroId/400/200';
+    final String? coverResolved;
+    if (widget.hideCoverSection && widget.parentCoverUrlNotifier != null) {
+      final v = widget.parentCoverUrlNotifier!.value?.trim();
+      coverResolved = (v == null || v.isEmpty) ? null : v;
+    } else if (!kIsWeb && _pickedFile != null) {
+      final upload = widget.uploadPickedCover;
+      if (upload == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.error,
+              content: Text(
+                'Envoi de l’image depuis le téléphone n’est pas disponible.',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+              ),
+            ),
+          );
+        }
+        setState(() => _loading = false);
+        return;
       }
+      try {
+        coverResolved = await upload(_pickedFile!);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: AppColors.error,
+              content: Text(
+                'Erreur envoi image : $e',
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+              ),
+            ),
+          );
+        }
+        setState(() => _loading = false);
+        return;
+      }
+    } else {
       final net = _coverNetworkUrl?.trim();
-      if (net != null && net.isNotEmpty) return net;
-      return base?.coverImageUrl ?? 'https://picsum.photos/seed/$_heroId/400/200';
-    }();
+      if (net != null && net.isNotEmpty) {
+        coverResolved = net;
+      } else {
+        coverResolved = widget.initial?.coverImageUrl;
+      }
+    }
 
-    final article = MockArticle(
-      id: base?.id ?? _heroId,
+    final ok = await widget.onSubmit(
       title: _titleCtrl.text.trim(),
       sourceUrl: _urlCtrl.text.trim(),
       coverImageUrl: coverResolved,
+      categoryId: categoryId,
       language: _language,
-      publishedAt: base?.publishedAt ?? now,
-      agencyName: _staticAgencyName,
-      agencyLogoUrl: _staticAgencyLogo,
-      categoryNameAr: cat.nameAr,
-      categoryNameFr: cat.labelFr,
-      categoryIcon: cat.icon,
-      categoryColor: cat.id,
-      lastModifiedAt: isEdit ? now : null,
     );
 
-    widget.onPrimarySuccess(article);
+    if (!mounted) return;
+    setState(() => _loading = false);
+    if (ok) {
+      setState(() => _success = true);
+      await _checkCtrl.forward(from: 0);
+    }
   }
 
   Widget _buildCoverPreview({bool useHero = false}) {
+    if (widget.hideCoverSection && widget.parentCoverUrlNotifier != null) {
+      final coverUrlStr = widget.parentCoverUrlNotifier!.value?.trim() ?? '';
+      if (coverUrlStr.isEmpty) {
+        return AspectRatio(
+          aspectRatio: 16 / 9,
+          child: ClipRRect(
+            borderRadius: AppRadius.imageRadius,
+            child: Container(
+              color: AppColors.surfaceVariant,
+              alignment: Alignment.center,
+              child: const Icon(Icons.image_outlined, color: AppColors.textTertiary, size: 40),
+            ),
+          ),
+        );
+      }
+      Widget imageChild = CachedNetworkImage(
+        imageUrl: coverUrlStr,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => Shimmer.fromColors(
+          baseColor: AppColors.surfaceVariant,
+          highlightColor: AppColors.surface,
+          child: Container(color: AppColors.surfaceVariant),
+        ),
+        errorWidget: (_, __, ___) => Container(
+          color: AppColors.surfaceVariant,
+          alignment: Alignment.center,
+          child: const Icon(Icons.broken_image_outlined, color: AppColors.textTertiary, size: 40),
+        ),
+      );
+      if (useHero) {
+        imageChild = Hero(
+          tag: 'cover_image_$_heroId',
+          child: imageChild,
+        );
+      }
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: ClipRRect(
+          borderRadius: AppRadius.imageRadius,
+          child: imageChild,
+        ),
+      );
+    }
+
     final hasLocal = !kIsWeb && _pickedFile != null;
     final hasNet = _coverNetworkUrl != null && _coverNetworkUrl!.trim().isNotEmpty;
     final fallback = widget.initial?.coverImageUrl;
@@ -307,9 +390,9 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
   }
 
   Widget _buildLivePreview() {
-    final cat = _category ?? kAgencyCategories.first;
+    final cat = _selectedCategory;
     final dateStr = DateFormat('d MMM yyyy', 'fr_FR').format(DateTime.now());
-    final titleStyle = _language == 'ar'
+    final titleStyle = _language == ArticleLanguage.ar
         ? AppTextStyles.articleTitleAr
         : AppTextStyles.articleTitle;
 
@@ -335,19 +418,23 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
             alignment: Alignment.centerLeft,
             child: Container(
               padding: AppSpacing.chipPadding,
-              decoration: BoxDecoration(
-                color: cat.color,
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
                 borderRadius: AppRadius.chipRadius,
               ),
               child: Text(
-                '${cat.icon} ${_language == 'ar' ? cat.nameAr : cat.labelFr}',
+                cat == null
+                    ? 'Catégorie'
+                    : '${cat.icon} ${cat.name(Localizations.localeOf(context).languageCode)}',
                 style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary),
               ),
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
           Directionality(
-            textDirection: _language == 'ar' ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+            textDirection: _language == ArticleLanguage.ar
+                ? ui.TextDirection.rtl
+                : ui.TextDirection.ltr,
             child: Text(
               _titleCtrl.text.trim().isEmpty ? 'Titre de l’article…' : _titleCtrl.text.trim(),
               maxLines: 3,
@@ -357,7 +444,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '$dateStr · $_staticAgencyName',
+            dateStr,
             style: AppTextStyles.meta,
           ),
         ],
@@ -474,56 +561,59 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
             validator: _validateUrl,
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            'Image de couverture *',
-            style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: AppRadius.imageRadius,
-              border: Border.all(color: AppColors.border, width: 1.2),
+          if (!widget.hideCoverSection) ...[
+            Text(
+              'Image de couverture *',
+              style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: _buildCoverPreview(useHero: false),
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: AppRadius.imageRadius,
+                border: Border.all(color: AppColors.border, width: 1.2),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: _buildCoverPreview(useHero: false),
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _pickImage,
-                  icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
-                  label: Text(
-                    '📷 Choisir une image',
-                    style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _pickImage,
+                    icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
+                    label: Text(
+                      '📷 Choisir une image',
+                      style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: _promptCoverUrl,
-                  icon: const Icon(Icons.link, color: AppColors.secondary),
-                  label: Text(
-                    '🔗 Depuis une URL',
-                    style: AppTextStyles.buttonMedium.copyWith(color: AppColors.secondary),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.secondary),
-                    shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _promptCoverUrl,
+                    icon: const Icon(Icons.link, color: AppColors.secondary),
+                    label: Text(
+                      '🔗 Depuis une URL',
+                      style: AppTextStyles.buttonMedium.copyWith(color: AppColors.secondary),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.secondary),
+                      shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xxl),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+          ],
+          if (widget.hideCoverSection) const SizedBox(height: AppSpacing.sm),
           Text(
             'Classification',
             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
@@ -536,10 +626,11 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
               ButtonSegment(value: 'fr', label: Text('🇫🇷 Français')),
               ButtonSegment(value: 'ar', label: Text('🇲🇷 العربية')),
             ],
-            selected: {_language},
+            selected: {_language.name},
             emptySelectionAllowed: false,
             onSelectionChanged: (s) {
-              setState(() => _language = s.first);
+              setState(() => _language = ArticleLanguage.values
+                  .firstWhere((e) => e.name == s.first));
             },
             style: ButtonStyle(
               visualDensity: VisualDensity.comfortable,
@@ -562,21 +653,27 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
               return Wrap(
                 spacing: AppSpacing.md,
                 runSpacing: AppSpacing.md,
-                children: kAgencyCategories.map((e) {
-                  final sel = _category?.id == e.id;
+                children: widget.categories.map((e) {
+                  final sel = _categoryId == e.id;
                   return SizedBox(
                     width: w,
                     child: FilterChip(
-                      label: Text('${e.icon} ${e.labelFr}', textAlign: TextAlign.center),
+                      label: Text(
+                        '${e.icon} ${e.name(Localizations.localeOf(context).languageCode)}',
+                        textAlign: TextAlign.center,
+                      ),
                       selected: sel,
-                      onSelected: (_) => setState(() => _category = e),
-                      selectedColor: e.color.withValues(alpha: 0.22),
-                      checkmarkColor: e.color,
+                      onSelected: (_) => setState(() => _categoryId = e.id),
+                      selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                      checkmarkColor: AppColors.primary,
                       showCheckmark: false,
                       labelStyle: AppTextStyles.labelMedium.copyWith(
                         color: sel ? AppColors.textPrimary : AppColors.textSecondary,
                       ),
-                      side: BorderSide(color: sel ? e.color : AppColors.border, width: sel ? 2 : 1),
+                      side: BorderSide(
+                        color: sel ? AppColors.primary : AppColors.border,
+                        width: sel ? 2 : 1,
+                      ),
                       shape: const RoundedRectangleBorder(borderRadius: AppRadius.chipRadius),
                     ),
                   );

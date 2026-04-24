@@ -1,9 +1,6 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final adminRepositoryProvider = Provider<AdminRepository>(
-  (ref) => AdminRepository(),
-);
+import '../../../shared/models/agency_model.dart';
 
 class AdminRepositoryException implements Exception {
   const AdminRepositoryException({
@@ -22,10 +19,58 @@ class AdminRepositoryException implements Exception {
 }
 
 class AdminRepository {
-  AdminRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  AdminRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
+
+  Future<Map<String, dynamic>> getGlobalStats() async {
+    try {
+      final pendingAgencies =
+          await _client.from('agencies').select('id').eq('status', 'pending');
+      final pendingReports =
+          await _client.from('reports').select('id').eq('status', 'pending');
+      final activeArticles =
+          await _client.from('articles').select('id').eq('is_active', true);
+      final categories = await _client.from('categories').select('id');
+
+      return {
+        'pending_agencies': pendingAgencies.length,
+        'pending_reports': pendingReports.length,
+        'active_articles': activeArticles.length,
+        'categories': categories.length,
+      };
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<List<AgencyModel>> getAgenciesByStatus(AgencyStatus status) async {
+    try {
+      final rows = await _client
+          .from('agencies')
+          .select()
+          .eq('status', status.name)
+          .order('created_at');
+      return (rows as List)
+          .map((e) => AgencyModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<List<dynamic>> getPendingReports() async {
+    try {
+      final rows = await _client
+          .from('reports')
+          .select()
+          .eq('status', 'pending')
+          .order('created_at');
+      return rows as List<dynamic>;
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
 
   Future<List<Map<String, dynamic>>> getPendingAgencies() {
     return _getAgenciesByStatus('pending');

@@ -115,16 +115,14 @@ class FeedRepository {
   Stream<List<ArticleModel>> watchTodayArticles() {
     final today = DateTime.now();
     final startOfDay = DateTime(today.year, today.month, today.day);
-    final endOfDay   = startOfDay.add(const Duration(days: 1));
 
     return _supabase
         .from(AppConstants.tableArticles)
         .stream(primaryKey: ['id'])
         .gte('published_at', startOfDay.toIso8601String())
-        .lt('published_at', endOfDay.toIso8601String())
         .order('published_at', ascending: false)
         .map((list) => list
-            .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+            .map((e) => ArticleModel.fromJson(e))
             .toList());
   }
 }

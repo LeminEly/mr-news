@@ -1,29 +1,46 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
-import 'package:mauritanie_news/features/agency/ui/mock_article.dart';
 import 'package:mauritanie_news/features/agency/ui/publish_article_screen.dart';
-import 'package:mauritanie_news/features/agency/ui/widgets/agency_drawer.dart';
-import 'package:mauritanie_news/features/agency/ui/widgets/article_card_agency.dart';
-import 'package:mauritanie_news/features/agency/ui/widgets/empty_state_widget.dart';
-import 'package:mauritanie_news/features/agency/ui/widgets/stats_card.dart';
+import 'package:mauritanie_news/shared/widgets/agency/agency_drawer.dart';
+import 'package:mauritanie_news/shared/widgets/agency/article_card_agency.dart';
+import 'package:mauritanie_news/shared/widgets/agency/empty_state_widget.dart';
+import 'package:mauritanie_news/shared/widgets/agency/stats_card.dart';
+import 'package:mauritanie_news/features/feed/providers/feed_providers.dart';
+import 'package:mauritanie_news/shared/models/article_model.dart';
+import 'package:mauritanie_news/shared/models/category_model.dart';
+import 'package:mauritanie_news/features/agency/ui/edit_article_screen.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_profile.dart';
+import 'package:mauritanie_news/shared/models/agency_model.dart';
+import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Tableau de bord agence (données mockées — prêt pour Supabase).
-class AgencyDashboardScreen extends StatefulWidget {
-  const AgencyDashboardScreen({super.key});
+/// Tableau de bord agence (Supabase).
+class AgencyDashboardScreen extends ConsumerStatefulWidget {
+  const AgencyDashboardScreen({super.key, required this.agency});
+
+  final AgencyModel? agency;
 
   @override
-  State<AgencyDashboardScreen> createState() => _AgencyDashboardScreenState();
+  ConsumerState<AgencyDashboardScreen> createState() =>
+      _AgencyDashboardScreenState();
 }
 
-class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
+class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
     with TickerProviderStateMixin {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
-  late List<MockArticle> _articles;
+  /// Copie mutable pour rafraîchir logo / infos après le profil.
+  AgencyModel? _agency;
+
+  List<ArticleModel> _articles = const [];
+  List<CategoryModel> _categories = const [];
+  bool _loading = true;
   String? _filterCategoryId;
 
   late final AnimationController _appBarGradientCtrl;
@@ -32,7 +49,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
   @override
   void initState() {
     super.initState();
-    _articles = List<MockArticle>.from(mockArticles);
+    _agency = widget.agency;
 
     _appBarGradientCtrl = AnimationController(
       vsync: this,
@@ -52,6 +69,16 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
         if (mounted) _statControllers[i].forward();
       });
     }
+
+    Future<void>.microtask(_load);
+  }
+
+  @override
+  void didUpdateWidget(covariant AgencyDashboardScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.agency != oldWidget.agency) {
+      _agency = widget.agency;
+    }
   }
 
   @override
@@ -63,25 +90,168 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
     super.dispose();
   }
 
-  List<MockArticle> get _visibleArticles {
+  List<ArticleModel> get _visibleArticles {
     if (_filterCategoryId == null) return _articles;
     return _articles.where((a) {
-      final opt = categoryOptionForArticle(a);
-      return opt?.id == _filterCategoryId;
+      return a.categoryId == _filterCategoryId;
     }).toList();
   }
 
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final agencyId = _agency?.id;
+      if (agencyId == null) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        return;
+      }
+      final repo = ref.read(agencyRepositoryProvider);
+      final categories = await repo.getCategories();
+      final articles = await repo.getMyArticles(agencyId);
+      if (!mounted) return;
+      setState(() {
+        _categories = categories;
+        _articles = articles;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text(
+            'Erreur de chargement',
+            style:
+                AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+          ),
+        ),
+      );
+    }
+  }
+
   Future<void> _openPublish() async {
-    // TODO: connect to Supabase — vérifier session agence avant publication.
-    final created = await Navigator.of(context).push<MockArticle>(
-      MaterialPageRoute<MockArticle>(
-        builder: (_) => const PublishArticleScreen(),
+    final agency = _agency;
+    if (agency == null || agency.id.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text(
+            'Profil agence introuvable',
+            style:
+                AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+          ),
+        ),
+      );
+      return;
+    }
+    final created = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => PublishArticleScreen(agency: agency),
       ),
     );
-    if (created != null && mounted) {
-      setState(() {
-        _articles = [created, ..._articles];
-      });
+    if (created == true && mounted) await _load();
+  }
+
+  Future<void> _openProfile() async {
+    final agency = _agency;
+    if (agency == null) return;
+    final updated = await Navigator.of(context).push<AgencyModel?>(
+      MaterialPageRoute(
+        builder: (_) => AgencyProfileScreen(agency: agency),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() => _agency = updated);
+    }
+  }
+
+  Widget _buildAppBarAvatar() {
+    final url = (_agency?.logoUrl ?? '').trim();
+    if (url.isEmpty) {
+      return const Icon(
+        Icons.business,
+        color: AppColors.primary,
+        size: 20,
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: 36,
+      height: 36,
+      fit: BoxFit.cover,
+      placeholder: (_, __) => Shimmer.fromColors(
+        baseColor: AppColors.surfaceVariant,
+        highlightColor: AppColors.surface,
+        child: Container(
+          width: 36,
+          height: 36,
+          color: AppColors.surfaceVariant,
+        ),
+      ),
+      errorWidget: (_, __, ___) => const Icon(
+        Icons.business,
+        color: AppColors.primary,
+        size: 20,
+      ),
+    );
+  }
+
+  Future<void> _confirmLogout() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
+        title: Text(
+          'Déconnexion',
+          style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
+        ),
+        content: Text(
+          'Voulez-vous vraiment vous déconnecter ?',
+          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(
+              'Annuler',
+              style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textSecondary),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(
+              'Déconnexion',
+              style: AppTextStyles.buttonMedium.copyWith(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) await _logout();
+  }
+
+  Future<void> _logout() async {
+    try {
+      await AgencyAuthService(Supabase.instance.client).logout();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const AgencyLoginScreen()),
+        (route) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: AppColors.error,
+          content: Text(
+            'Erreur de déconnexion',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+          ),
+        ),
+      );
     }
   }
 
@@ -94,45 +264,12 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
       backgroundColor: AppColors.background,
       drawer: AgencyDrawer(
         selectedItem: AgencyDrawerSelection.dashboard,
+        agency: _agency,
         onClose: () => Navigator.of(context).maybePop(),
         onDashboard: () {},
         onPublish: _openPublish,
-        onProfile: () {
-          // TODO: connect to Supabase — charger le profil agence.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Profil agence (mock)',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
-              ),
-              backgroundColor: AppColors.info,
-            ),
-          );
-        },
-        onSettings: () {
-          // TODO: connect to Supabase — préférences agence.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Paramètres (mock)',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
-              ),
-              backgroundColor: AppColors.info,
-            ),
-          );
-        },
-        onLogout: () {
-          // TODO: connect to Supabase — signOut.
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Déconnexion (mock)',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
-              ),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        },
+        onProfile: _openProfile,
+        onLogout: _confirmLogout,
       ),
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(kToolbarHeight),
@@ -176,26 +313,7 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
                     radius: 18,
                     backgroundColor: AppColors.surface,
                     child: ClipOval(
-                      child: CachedNetworkImage(
-                        imageUrl: 'https://picsum.photos/200',
-                        width: 36,
-                        height: 36,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => Shimmer.fromColors(
-                          baseColor: AppColors.surfaceVariant,
-                          highlightColor: AppColors.surface,
-                          child: Container(
-                            width: 36,
-                            height: 36,
-                            color: AppColors.surfaceVariant,
-                          ),
-                        ),
-                        errorWidget: (_, __, ___) => const Icon(
-                          Icons.business,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                      ),
+                      child: _buildAppBarAvatar(),
                     ),
                   ),
                 ),
@@ -235,12 +353,14 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
                           selectedColor: AppColors.primary,
                           onTap: () => setState(() => _filterCategoryId = null),
                         ),
-                        ...kAgencyCategories.take(5).map((c) {
+                        ..._categories.map((c) {
                           final sel = _filterCategoryId == c.id;
+                          final locale =
+                              Localizations.localeOf(context).languageCode;
                           return _FilterChip(
-                            label: '${c.icon} ${c.labelFr}',
+                            label: '${c.icon} ${c.name(locale)}',
                             selected: sel,
-                            selectedColor: c.color,
+                            selectedColor: AppColors.surfaceVariant,
                             onTap: () => setState(() => _filterCategoryId = c.id),
                           );
                         }),
@@ -251,7 +371,14 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
               ),
             ),
           ),
-          if (visible.isEmpty)
+          if (_loading)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (visible.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
               child: Padding(
@@ -271,19 +398,32 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final a = visible[index];
+                    CategoryModel? category;
+                    if (a.categoryId != null) {
+                      for (final c in _categories) {
+                        if (c.id == a.categoryId) {
+                          category = c;
+                          break;
+                        }
+                      }
+                    }
                     return _StaggeredArticleRow(
                       index: index,
                       article: a,
+                      category: category,
                       onDeleted: () {
-                        setState(() {
-                          _articles.removeWhere((e) => e.id == a.id);
-                        });
+                        _load();
                       },
-                      onUpdated: (updated) {
-                        setState(() {
-                          final i = _articles.indexWhere((e) => e.id == updated.id);
-                          if (i >= 0) _articles[i] = updated;
-                        });
+                      onEdit: () async {
+                        final updated = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute<bool>(
+                            builder: (_) => EditArticleScreen(
+                              article: a,
+                              categories: _categories,
+                            ),
+                          ),
+                        );
+                        if (updated == true && mounted) await _load();
                       },
                     );
                   },
@@ -297,11 +437,12 @@ class _AgencyDashboardScreenState extends State<AgencyDashboardScreen>
   }
 
   Widget _buildStatsGrid() {
+    final publishedCount = _articles.length;
     final stats = <({String title, String value, IconData icon, Color color})>[
-      (title: 'Articles publiés', value: '12', icon: Icons.article_outlined, color: AppColors.primary),
-      (title: 'Total réactions', value: '248', icon: Icons.favorite_border, color: AppColors.accent),
-      (title: 'Vues estimées', value: '3.2k', icon: Icons.visibility_outlined, color: AppColors.info),
-      (title: 'Ce mois-ci', value: '5', icon: Icons.trending_up, color: AppColors.success),
+      (title: 'Articles publiés', value: '$publishedCount', icon: Icons.article_outlined, color: AppColors.primary),
+      (title: 'Total réactions', value: '—', icon: Icons.favorite_border, color: AppColors.accent),
+      (title: 'Vues estimées', value: '—', icon: Icons.visibility_outlined, color: AppColors.info),
+      (title: 'Ce mois-ci', value: '—', icon: Icons.trending_up, color: AppColors.success),
     ];
 
     return LayoutBuilder(
@@ -371,14 +512,16 @@ class _StaggeredArticleRow extends StatefulWidget {
   const _StaggeredArticleRow({
     required this.index,
     required this.article,
+    required this.category,
     required this.onDeleted,
-    required this.onUpdated,
+    required this.onEdit,
   });
 
   final int index;
-  final MockArticle article;
+  final ArticleModel article;
+  final CategoryModel? category;
   final VoidCallback onDeleted;
-  final ValueChanged<MockArticle> onUpdated;
+  final VoidCallback onEdit;
 
   @override
   State<_StaggeredArticleRow> createState() => _StaggeredArticleRowState();
@@ -411,9 +554,10 @@ class _StaggeredArticleRowState extends State<_StaggeredArticleRow>
     final anim = CurvedAnimation(parent: _c, curve: Curves.easeOutCubic);
     return ArticleCardAgency(
       article: widget.article,
+      category: widget.category,
       animation: anim,
       onDeleted: widget.onDeleted,
-      onUpdated: widget.onUpdated,
+      onEdit: widget.onEdit,
     );
   }
 }

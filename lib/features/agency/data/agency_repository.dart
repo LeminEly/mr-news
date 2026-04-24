@@ -1,11 +1,9 @@
-import 'dart:typed_data';
-
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-final agencyRepositoryProvider = Provider<AgencyRepository>(
-  (ref) => AgencyRepository(),
-);
+import '../../../shared/models/article_model.dart';
+import '../../../shared/models/agency_model.dart';
+import '../../../shared/models/category_model.dart';
 
 class AgencyRepositoryException implements Exception {
   const AgencyRepositoryException({
@@ -24,8 +22,7 @@ class AgencyRepositoryException implements Exception {
 }
 
 class AgencyRepository {
-  AgencyRepository({SupabaseClient? client})
-      : _client = client ?? Supabase.instance.client;
+  AgencyRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
 
@@ -200,6 +197,39 @@ class AgencyRepository {
     return _client.storage.from('agency-logos').getPublicUrl(path);
   }
 
+  /// Couverture article (bucket `article-covers`, chemin `agencyId/timestamp.ext`).
+  Future<String> uploadArticleCover({
+    required String agencyId,
+    required Uint8List bytes,
+    String? fileExt,
+  }) async {
+    if (agencyId.isEmpty) {
+      throw const AgencyRepositoryException(
+        code: 'INVALID',
+        message: 'agency_id requis pour l\'upload de couverture.',
+      );
+    }
+    final ext = _normalizeFileExt(fileExt);
+    final path = '$agencyId/${DateTime.now().millisecondsSinceEpoch}.$ext';
+    try {
+      await _client.storage.from('article-covers').uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(
+              contentType: _contentTypeForExtension(ext),
+              upsert: false,
+            ),
+          );
+      return _client.storage.from('article-covers').getPublicUrl(path);
+    } on StorageException catch (error) {
+      throw AgencyRepositoryException(
+        code: 'STORAGE_ERROR',
+        message: error.message,
+        details: error,
+      );
+    }
+  }
+
   String _normalizeFileExt(String? fileExt) {
     final trimmed =
         (fileExt ?? 'jpg').trim().toLowerCase().replaceFirst('.', '');
@@ -240,5 +270,160 @@ class AgencyRepository {
       message: error.message,
       details: error,
     );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // CRUD articles + catégories + profil agence (Supabase réel)
+  // ────────────────────────────────────────────────────────────────────────────
+
+  Future<List<ArticleModel>> getMyArticles(String agencyId) async {
+    try {
+      final response = await _client
+          .from('articles')
+          .select()
+          .eq('agency_id', agencyId)
+          .order('published_at', ascending: false);
+
+      return (response as List)
+          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<void> publishArticle({
+    required String agencyId,
+    required String title,
+    required String sourceUrl,
+    String? coverImageUrl,
+    required String categoryId,
+    required String language,
+  }) async {
+    debugPrint('=== PUBLISH START ===');
+    debugPrint('agencyId: "$agencyId"');
+    debugPrint('title: "$title"');
+    debugPrint('sourceUrl: "$sourceUrl"');
+    debugPrint('categoryId: "$categoryId"');
+    debugPrint('language: "$language"');
+    debugPrint('coverImageUrl: "$coverImageUrl"');
+    debugPrint('currentUser: "${_client.auth.currentUser?.id}"');
+
+    if (_client.auth.currentUser == null) {
+      throw Exception('Utilisateur non connecté');
+    }
+
+    if (agencyId.isEmpty) throw Exception('agency_id est vide');
+    if (categoryId.isEmpty) throw Exception('category_id est vide');
+    if (title.isEmpty) throw Exception('title est vide');
+    if (sourceUrl.isEmpty) throw Exception('source_url est vide');
+
+    final Map<String, dynamic> data = {
+      'agency_id': agencyId,
+      'title': title,
+      'source_url': sourceUrl,
+      'category_id': categoryId,
+      'language': language,
+      'is_active': true,
+      'published_at': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    if (coverImageUrl != null && coverImageUrl.isNotEmpty) {
+      data['cover_image_url'] = coverImageUrl;
+    }
+
+    debugPrint('Data envoyée: $data');
+
+    try {
+      final result = await _client.from('articles').insert(data).select();
+      debugPrint('=== PUBLISH SUCCESS === $result');
+    } on PostgrestException catch (e) {
+      debugPrint('=== POSTGREST ERROR ===');
+      debugPrint('message: ${e.message}');
+      debugPrint('code: ${e.code}');
+      debugPrint('details: ${e.details}');
+      debugPrint('hint: ${e.hint}');
+      rethrow;
+    } catch (e) {
+      debugPrint('=== UNKNOWN ERROR === $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateArticle({
+    required String articleId,
+    required String title,
+    required String sourceUrl,
+    String? coverImageUrl,
+    required String categoryId,
+    required ArticleLanguage language,
+  }) async {
+    try {
+      final rows = await _client.from('articles').update({
+        'title': title,
+        'source_url': sourceUrl,
+        'cover_image_url': coverImageUrl,
+        'category_id': categoryId,
+        'language': language.name,
+        'updated_at': DateTime.now().toIso8601String(),
+      }).eq('id', articleId).select('id');
+      final list = List<dynamic>.from(rows as List? ?? const []);
+      if (list.isEmpty) {
+        throw const AgencyRepositoryException(
+          code: 'UPDATE_FAILED',
+          message:
+              'Aucune ligne mise a jour. Verifiez vos droits (RLS) ou reessayez.',
+        );
+      }
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<void> deleteArticle(String articleId) async {
+    try {
+      final rows =
+          await _client.from('articles').delete().eq('id', articleId).select('id');
+      final list = List<dynamic>.from(rows as List? ?? const []);
+      if (list.isEmpty) {
+        throw const AgencyRepositoryException(
+          code: 'DELETE_FAILED',
+          message:
+              'Aucune ligne supprimee. Verifiez vos droits (RLS) ou reessayez.',
+        );
+      }
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<List<CategoryModel>> getCategories() async {
+    try {
+      final response = await _client
+          .from('categories')
+          .select()
+          .eq('is_active', true)
+          .order('display_order');
+
+      return (response as List)
+          .map((e) => CategoryModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
+  }
+
+  Future<AgencyModel?> getMyAgency(String authUserId) async {
+    try {
+      final response = await _client
+          .from('agencies')
+          .select()
+          .eq('auth_user_id', authUserId)
+          .maybeSingle();
+      if (response == null) return null;
+      return AgencyModel.fromJson(response);
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
+    }
   }
 }

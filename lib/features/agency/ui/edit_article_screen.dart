@@ -1,22 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 import 'package:mauritanie_news/features/agency/ui/agency_article_form.dart';
-import 'package:mauritanie_news/features/agency/ui/mock_article.dart';
+import 'package:mauritanie_news/features/feed/providers/feed_providers.dart';
+import 'package:mauritanie_news/shared/models/article_model.dart';
+import 'package:mauritanie_news/shared/models/category_model.dart';
 
-/// Écran modification d’article (mock — pas de backend).
-class EditArticleScreen extends StatefulWidget {
-  const EditArticleScreen({super.key, required this.article});
+/// Écran modification d’article (Supabase).
+class EditArticleScreen extends ConsumerStatefulWidget {
+  const EditArticleScreen({
+    super.key,
+    required this.article,
+    required this.categories,
+  });
 
-  final MockArticle article;
+  final ArticleModel article;
+  final List<CategoryModel> categories;
 
   @override
-  State<EditArticleScreen> createState() => _EditArticleScreenState();
+  ConsumerState<EditArticleScreen> createState() => _EditArticleScreenState();
 }
 
-class _EditArticleScreenState extends State<EditArticleScreen>
+class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _gradientCtrl;
 
@@ -39,23 +48,9 @@ class _EditArticleScreenState extends State<EditArticleScreen>
     return DateFormat("d MMM yyyy 'à' HH:mm", 'fr_FR').format(d);
   }
 
-  void _onSaved(MockArticle article) {
-    // TODO: connect to Supabase — mettre à jour l’article (upsert).
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: AppColors.success,
-        content: Text(
-          'Modifications enregistrées (mock)',
-          style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
-        ),
-      ),
-    );
-    Navigator.of(context).pop<MockArticle>(article);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final last = widget.article.lastModifiedAt ?? widget.article.publishedAt;
+    final last = widget.article.updatedAt;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -136,7 +131,64 @@ class _EditArticleScreenState extends State<EditArticleScreen>
               AgencyArticleForm(
                 mode: AgencyFormMode.edit,
                 initial: widget.article,
-                onPrimarySuccess: _onSaved,
+                categories: widget.categories,
+                uploadPickedCover: (XFile file) async {
+                  final bytes = await file.readAsBytes();
+                  var ext = file.path.split('.').last.toLowerCase();
+                  if (ext.isEmpty || ext.length > 8) ext = 'jpg';
+                  ext = ext.replaceFirst(RegExp(r'^\.'), '');
+                  return ref.read(agencyRepositoryProvider).uploadArticleCover(
+                        agencyId: widget.article.agencyId,
+                        bytes: bytes,
+                        fileExt: ext,
+                      );
+                },
+                onSubmit: ({
+                  required String title,
+                  required String sourceUrl,
+                  String? coverImageUrl,
+                  required String categoryId,
+                  required ArticleLanguage language,
+                }) async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  final navigator = Navigator.of(context);
+                  try {
+                    await ref.read(agencyRepositoryProvider).updateArticle(
+                          articleId: widget.article.id,
+                          title: title,
+                          sourceUrl: sourceUrl,
+                          coverImageUrl: coverImageUrl,
+                          categoryId: categoryId,
+                          language: language,
+                        );
+                    if (!mounted) return true;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.success,
+                        content: Text(
+                          'Modifications enregistrées',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.textOnPrimary),
+                        ),
+                      ),
+                    );
+                    navigator.pop(true);
+                    return true;
+                  } catch (_) {
+                    if (!mounted) return false;
+                    messenger.showSnackBar(
+                      SnackBar(
+                        backgroundColor: AppColors.error,
+                        content: Text(
+                          'Erreur lors de la mise à jour',
+                          style: AppTextStyles.bodyMedium
+                              .copyWith(color: AppColors.textOnPrimary),
+                        ),
+                      ),
+                    );
+                    return false;
+                  }
+                },
                 onCancel: () => Navigator.of(context).maybePop(),
               ),
             ],

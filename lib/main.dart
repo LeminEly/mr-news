@@ -8,7 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'core/constants/app_constants.dart';
 import 'shared/theme/app_theme.dart';
 import 'app/router.dart';
-import 'core/constants/env.g.dart';
+import 'core/constants/env.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +20,18 @@ Future<void> main() async {
   ]);
 
   // Init Supabase 
-  await Supabase.initialize(
-    url:     Env.appSupabaseUrl,
-    anonKey: Env.appSupabaseAnonKey,
-    debug: true, // true en développement
+  try {
+    await Supabase.initialize(
+      url: Env.appSupabaseUrl,
+      anonKey: Env.appSupabaseAnonKey,
+      debug: true, // true en développement
+    );
+  } catch (e) {
+    debugPrint('Supabase init error: $e');
+  }
+
+  debugPrint(
+    '=== IMPORTANT: Exécuter lib/supabase/rls_policies.sql dans Supabase Dashboard ===',
   );
 
   // Lire la langue sauvegardée
@@ -34,7 +42,6 @@ Future<void> main() async {
   runApp(
     ProviderScope(
       overrides: [
-        // Injecter la langue initiale
         initialLocaleProvider.overrideWithValue(
           savedLang != null ? Locale(savedLang) : null,
         ),

@@ -261,16 +261,15 @@ CREATE POLICY "articles_select_admin"
   ON articles FOR SELECT
   USING (get_user_role() = 'admin');
 
--- Seule une agence approuvée peut publier
-CREATE POLICY "articles_insert_approved_agency"
+-- L'agence connectée peut créer un article (y compris tant que status = pending).
+-- La vue publique articles_with_details ne montre que les agences approved.
+CREATE POLICY "articles_insert_own_agency"
   ON articles FOR INSERT
+  TO authenticated
   WITH CHECK (
-    get_user_role() = 'agency'
-    AND agency_id = get_current_agency_id()
-    AND EXISTS (
-      SELECT 1 FROM agencies
-      WHERE id = get_current_agency_id()
-      AND status = 'approved'
+    agency_id IN (
+      SELECT id FROM agencies
+      WHERE auth_user_id = auth.uid()
     )
   );
 

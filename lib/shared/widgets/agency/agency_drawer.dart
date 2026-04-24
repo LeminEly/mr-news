@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
+import 'package:mauritanie_news/shared/models/agency_model.dart';
 
 /// Élément de menu mis en surbrillance dans le drawer.
 enum AgencyDrawerSelection {
@@ -18,8 +19,8 @@ class AgencyDrawer extends StatelessWidget {
     required this.onDashboard,
     required this.onPublish,
     required this.onProfile,
-    required this.onSettings,
     required this.onLogout,
+    this.agency,
     this.selectedItem = AgencyDrawerSelection.dashboard,
   });
 
@@ -27,15 +28,17 @@ class AgencyDrawer extends StatelessWidget {
   final VoidCallback onDashboard;
   final VoidCallback onPublish;
   final VoidCallback onProfile;
-  final VoidCallback onSettings;
   final VoidCallback onLogout;
   final AgencyDrawerSelection selectedItem;
-
-  static const String _agencyName = 'Agence Mauritanie Presse';
-  static const String _logoUrl = 'https://picsum.photos/200';
+  final AgencyModel? agency;
 
   @override
   Widget build(BuildContext context) {
+    final a = agency;
+    final logoUrl = (a?.logoUrl ?? '').trim();
+    final name = (a?.name ?? 'Agence').trim();
+    final status = a?.status;
+
     return Drawer(
       backgroundColor: AppColors.surface,
       child: SafeArea(
@@ -61,39 +64,45 @@ class AgencyDrawer extends StatelessWidget {
                         radius: 40,
                         backgroundColor: AppColors.surface,
                         child: ClipOval(
-                          child: CachedNetworkImage(
-                            imageUrl: _logoUrl,
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                            placeholder: (_, __) => Shimmer.fromColors(
-                              baseColor: AppColors.surfaceVariant,
-                              highlightColor: AppColors.surface,
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                color: AppColors.surfaceVariant,
-                              ),
-                            ),
-                            errorWidget: (_, __, ___) => const Icon(
-                              Icons.business_rounded,
-                              color: AppColors.primary,
-                              size: 40,
-                            ),
-                          ),
+                          child: logoUrl.isEmpty
+                              ? const Icon(
+                                  Icons.business_rounded,
+                                  color: AppColors.primary,
+                                  size: 40,
+                                )
+                              : CachedNetworkImage(
+                                  imageUrl: logoUrl,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  placeholder: (_, __) => Shimmer.fromColors(
+                                    baseColor: AppColors.surfaceVariant,
+                                    highlightColor: AppColors.surface,
+                                    child: Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: AppColors.surfaceVariant,
+                                    ),
+                                  ),
+                                  errorWidget: (_, __, ___) => const Icon(
+                                    Icons.business_rounded,
+                                    color: AppColors.primary,
+                                    size: 40,
+                                  ),
+                                ),
                         ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      _agencyName,
+                      name,
                       style: AppTextStyles.headlineSmall.copyWith(
                         color: AppColors.textOnPrimary,
                         fontFamily: AppTextStyles.fontFr,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    const _StatusBadge(),
+                    _StatusBadge(status: status),
                   ],
                 ),
               ),
@@ -124,13 +133,10 @@ class AgencyDrawer extends StatelessWidget {
                     icon: '👤',
                     label: 'Mon Profil',
                     selected: false,
-                    onTap: onProfile,
-                  ),
-                  _DrawerTile(
-                    icon: '⚙️',
-                    label: 'Paramètres',
-                    selected: false,
-                    onTap: onSettings,
+                    onTap: () {
+                      onProfile();
+                      onClose();
+                    },
                   ),
                   const Divider(height: 1, color: AppColors.divider),
                   _DrawerTile(
@@ -186,21 +192,55 @@ class _DrawerHeaderFadeState extends State<_DrawerHeaderFade>
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge();
+  const _StatusBadge({required this.status});
+
+  final AgencyStatus? status;
 
   @override
   Widget build(BuildContext context) {
+    final s = status;
+    final label = () {
+      switch (s) {
+        case AgencyStatus.approved:
+          return '✅ Approuvée';
+        case AgencyStatus.pending:
+          return '⏳ En attente';
+        case AgencyStatus.rejected:
+          return '❌ Rejetée';
+        case AgencyStatus.suspended:
+          return '⛔ Suspendue';
+        case null:
+          return '—';
+      }
+    }();
+
+    final (bg, fg, border) = () {
+      switch (s) {
+        case AgencyStatus.approved:
+          return (AppColors.successLight, AppColors.success, AppColors.success);
+        case AgencyStatus.pending:
+          return (AppColors.warningLight, AppColors.warning, AppColors.warning);
+        case AgencyStatus.rejected:
+          return (AppColors.errorLight, AppColors.error, AppColors.error);
+        case AgencyStatus.suspended:
+          return (AppColors.errorLight, AppColors.error, AppColors.error);
+        case null:
+          return (AppColors.surfaceVariant, AppColors.textSecondary, AppColors.border);
+      }
+    }();
+
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
         padding: AppSpacing.chipPadding,
-        decoration: const BoxDecoration(
-          color: AppColors.successLight,
+        decoration: BoxDecoration(
+          color: bg,
           borderRadius: AppRadius.chipRadius,
+          border: Border.all(color: border),
         ),
         child: Text(
-          '✅ Approuvée',
-          style: AppTextStyles.labelMedium.copyWith(color: AppColors.success),
+          label,
+          style: AppTextStyles.labelMedium.copyWith(color: fg),
         ),
       ),
     );
