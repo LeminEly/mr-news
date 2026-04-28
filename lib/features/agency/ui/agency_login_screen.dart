@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_register_screen.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_dashboard_screen.dart';
+import 'package:mauritanie_news/app/router.dart';
 
 class AgencyLoginScreen extends StatefulWidget {
   const AgencyLoginScreen({super.key});
@@ -64,12 +64,11 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
 
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     try {
       final supabase = Supabase.instance.client;
       final authService = AgencyAuthService(supabase);
-      final agency = await authService.login(
+      await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -78,11 +77,7 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
       // Pour l'instant, tous les comptes connectés accèdent au dashboard
 
       if (!mounted) return;
-      navigator.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => AgencyDashboardScreen(agency: agency),
-        ),
-      );
+      context.go(AppRoutes.agencyDashboard);
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());
@@ -284,12 +279,7 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AgencyRegisterScreen()),
-                    );
-                  },
+                  onPressed: () => context.push(AppRoutes.agencyRegister),
                   child: Text(
                     'Créer un compte',
                     style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),

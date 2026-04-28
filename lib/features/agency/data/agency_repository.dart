@@ -28,7 +28,7 @@ class AgencyRepository {
 
   User? get currentUser => _client.auth.currentUser;
 
-  Future<Map<String, dynamic>> signUpAgency({
+  Future<AgencyModel> signUpAgency({
     required String email,
     required String password,
     required String name,
@@ -74,7 +74,7 @@ class AgencyRepository {
           .select()
           .single();
 
-      return inserted;
+      return AgencyModel.fromSupabase(inserted);
     } on AuthException catch (error) {
       throw AgencyRepositoryException(
           code: error.statusCode ?? 'AUTH_ERROR',
@@ -88,7 +88,7 @@ class AgencyRepository {
     }
   }
 
-  Future<Map<String, dynamic>> signInAgency({
+  Future<AgencyModel> signInAgency({
     required String email,
     required String password,
   }) async {
@@ -109,8 +109,8 @@ class AgencyRepository {
   }
 
   Future<void> signOut() => _client.auth.signOut();
-
-  Future<Map<String, dynamic>> getCurrentAgency() async {
+  
+  Future<AgencyModel> getCurrentAgency() async {
     final user = currentUser;
     if (user == null) {
       throw const AgencyRepositoryException(
@@ -120,17 +120,18 @@ class AgencyRepository {
     }
 
     try {
-      return await _client
+      final data = await _client
           .from('agencies')
           .select()
           .eq('auth_user_id', user.id)
           .single();
+      return AgencyModel.fromSupabase(data);
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);
     }
   }
 
-  Future<Map<String, dynamic>> updateAgencyProfile({
+  Future<AgencyModel> updateAgencyProfile({
     required String agencyId,
     String? name,
     String? websiteUrl,
@@ -152,16 +153,16 @@ class AgencyRepository {
         );
       }
 
-      if (updates.isEmpty) {
-        return _client.from('agencies').select().eq('id', agencyId).single();
-      }
+      final data = await (updates.isEmpty
+          ? _client.from('agencies').select().eq('id', agencyId).single()
+          : _client
+              .from('agencies')
+              .update(updates)
+              .eq('id', agencyId)
+              .select()
+              .single());
 
-      return await _client
-          .from('agencies')
-          .update(updates)
-          .eq('id', agencyId)
-          .select()
-          .single();
+      return AgencyModel.fromSupabase(data);
     } on StorageException catch (error) {
       throw AgencyRepositoryException(
           code: 'STORAGE_ERROR', message: error.message, details: error);
@@ -298,7 +299,7 @@ class AgencyRepository {
     required String sourceUrl,
     String? coverImageUrl,
     required String categoryId,
-    required String language,
+    required ArticleLanguage language,
   }) async {
     debugPrint('=== PUBLISH START ===');
     debugPrint('agencyId: "$agencyId"');
@@ -323,7 +324,7 @@ class AgencyRepository {
       'title': title,
       'source_url': sourceUrl,
       'category_id': categoryId,
-      'language': language,
+      'language': language.name,
       'is_active': true,
       'published_at': DateTime.now().toUtc().toIso8601String(),
     };

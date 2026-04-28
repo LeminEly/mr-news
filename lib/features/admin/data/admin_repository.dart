@@ -76,16 +76,15 @@ class AdminRepository {
     return _getAgenciesByStatus('pending');
   }
 
-  Future<List<Map<String, dynamic>>> getAgencies({String? status}) async {
+  Future<List<AgencyModel>> getAgencies({String? status}) async {
     try {
-      final rows = status == null
-          ? await _client.from('agencies').select().order('created_at')
-          : await _client
-              .from('agencies')
-              .select()
-              .eq('status', status)
-              .order('created_at');
-      return List<Map<String, dynamic>>.from(rows);
+      final baseQuery = _client.from('agencies').select();
+      final query = status == null ? baseQuery : baseQuery.eq('status', status);
+      final rows = await query.order('created_at');
+
+      return (rows as List)
+          .map((e) => AgencyModel.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);
     }

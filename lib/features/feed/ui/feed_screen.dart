@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mauritanie_news/app/router.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
-import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_dashboard_screen.dart';
 
 class FeedScreen extends StatelessWidget {
   const FeedScreen({super.key});
@@ -33,43 +31,7 @@ class FeedScreen extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
-              onPressed: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final navigator = Navigator.of(context);
-                try {
-                  final supabase = Supabase.instance.client;
-                  final authService = AgencyAuthService(supabase);
-                  final agency = await authService.getCurrentAgency();
-                  if (!context.mounted) return;
-
-                  if (agency != null) {
-                    navigator.push(
-                      MaterialPageRoute(
-                        builder: (_) => AgencyDashboardScreen(agency: agency),
-                      ),
-                    );
-                    return;
-                  }
-
-                  navigator.push(
-                    MaterialPageRoute(
-                      builder: (_) => const AgencyLoginScreen(),
-                    ),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  messenger.showSnackBar(
-                    SnackBar(
-                      backgroundColor: AppColors.error,
-                      content: Text(
-                        'Erreur d’accès à l’espace agence: $e',
-                        style: AppTextStyles.bodyMedium
-                            .copyWith(color: AppColors.textOnPrimary),
-                      ),
-                    ),
-                  );
-                }
-              },
+              onPressed: () => context.push(AppRoutes.agencyDashboard),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
@@ -78,6 +40,22 @@ class FeedScreen extends StatelessWidget {
               child: Text(
                 'Espace agence',
                 style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textOnPrimary),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            ElevatedButton(
+              onPressed: () => context.push(AppRoutes.adminDashboard),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.surfaceVariant,
+                foregroundColor: AppColors.textPrimary,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: AppRadius.buttonRadius,
+                  side: BorderSide(color: AppColors.border),
+                ),
+              ),
+              child: Text(
+                'Espace administration',
+                style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textPrimary),
               ),
             ),
           ],

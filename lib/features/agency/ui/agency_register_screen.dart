@@ -8,7 +8,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
 import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_dashboard_screen.dart';
+
+import 'package:go_router/go_router.dart';
+import 'package:mauritanie_news/app/router.dart';
 
 class AgencyRegisterScreen extends StatefulWidget {
   const AgencyRegisterScreen({super.key});
@@ -162,7 +164,6 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
 
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
 
     try {
       final supabase = Supabase.instance.client;
@@ -178,15 +179,13 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
         logoFileExt: _logoFileExt,
       );
 
-      final agency = await authService.login(
+      await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
       if (!mounted) return;
-      navigator.pushReplacement(
-        MaterialPageRoute(builder: (_) => AgencyDashboardScreen(agency: agency)),
-      );
+      context.go(AppRoutes.agencyDashboard);
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());

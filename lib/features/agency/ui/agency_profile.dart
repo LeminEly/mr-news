@@ -111,13 +111,12 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
     try {
       final bytes = await picked.readAsBytes();
       final ext = picked.path.split('.').last.toLowerCase();
-      final row = await ref.read(agencyRepositoryProvider).updateAgencyProfile(
+      final updated = await ref.read(agencyRepositoryProvider).updateAgencyProfile(
             agencyId: agency.id,
             logoBytes: bytes,
             logoFileExt: ext,
           );
       if (!mounted) return;
-      final updated = AgencyModel.fromSupabase(row);
       setState(() {
         _agency = updated;
         _uploadingLogo = false;

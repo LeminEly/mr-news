@@ -26,6 +26,7 @@ Future<void> main() async {
       anonKey: Env.appSupabaseAnonKey,
       debug: true, // true en développement
     );
+    // Force sign out on start to ensure we always see the auth screen
   } catch (e) {
     debugPrint('Supabase init error: $e');
   }

@@ -561,8 +561,6 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                       return false;
                     }
 
-                    final languageCode = language.name;
-
                     try {
                       await ref.read(agencyRepositoryProvider).publishArticle(
                             agencyId: widget.agency.id,
@@ -570,7 +568,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                             sourceUrl: sourceUrl.trim(),
                             coverImageUrl: coverImageUrl,
                             categoryId: categoryId,
-                            language: languageCode,
+                            language: language,
                           );
                       if (!mounted) return true;
                       messenger.showSnackBar(
