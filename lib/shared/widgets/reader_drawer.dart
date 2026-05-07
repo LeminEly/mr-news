@@ -32,7 +32,11 @@ class ReaderDrawer extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.newspaper_rounded, size: 48, color: Colors.white),
+                  Image.asset(
+                    'assets/images/logo.png',
+                    width: 56, // Increased size slightly for better visibility
+                    height: 56,
+                  ),
                   const Gap(AppSpacing.md),
                   Text(
                     isAr ? 'موريتانيا نيوز' : 'Mauritanie News',

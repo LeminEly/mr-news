@@ -2,8 +2,8 @@ class AppConstants {
   AppConstants._();
 
   // APP INFO 
-  static const String appName = 'أخبار موريتانيا';
-  static const String appNameFr = 'Actualités Mauritanie';
+  static const String appName = 'موريتانيا نيوز';
+  static const String appNameFr = 'Mauritanie News';
   static const String appVersion = '1.0.0';
 
   // SUPABASE TABLES
