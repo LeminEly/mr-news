@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
-/// Carte statistique pour le tableau de bord agence.
+/// Carte statistique pour les tableaux de bord (Agence ou Admin).
 class StatsCard extends StatelessWidget {
   const StatsCard({
     super.key,
@@ -11,6 +11,7 @@ class StatsCard extends StatelessWidget {
     required this.icon,
     required this.accentColor,
     this.animation,
+    this.onTap,
   });
 
   final String title;
@@ -18,44 +19,59 @@ class StatsCard extends StatelessWidget {
   final IconData icon;
   final Color accentColor;
   final Animation<double>? animation;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final child = Container(
-      padding: AppSpacing.cardPadding,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: AppRadius.cardRadius,
         border: Border.all(color: AppColors.border),
         boxShadow: AppShadows.card,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(AppSpacing.sm),
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.12),
-                  borderRadius: AppRadius.buttonRadius,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadius.cardRadius,
+          child: Padding(
+            padding: AppSpacing.cardPadding,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: accentColor.withOpacity(0.12),
+                        borderRadius: AppRadius.buttonRadius,
+                      ),
+                      child: Icon(icon, color: accentColor, size: 22),
+                    ),
+                    if (onTap != null) ...[
+                      const Spacer(),
+                      Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.textTertiary.withOpacity(0.5)),
+                    ],
+                  ],
                 ),
-                child: Icon(icon, color: accentColor, size: 22),
-              ),
-              const Spacer(),
-            ],
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  value,
+                  style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            value,
-            style: AppTextStyles.headlineLarge.copyWith(color: AppColors.textPrimary),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            title,
-            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-          ),
-        ],
+        ),
       ),
     );
 

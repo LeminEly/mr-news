@@ -11,6 +11,7 @@ import '../features/agency/ui/agency_login_screen.dart';
 import '../features/agency/ui/agency_pending_screen.dart';
 import '../features/agency/ui/publish_article_screen.dart';
 import '../features/agency/ui/agency_profile.dart';
+import '../features/agency/ui/agency_dashboard_screen.dart';
 import '../shared/models/agency_model.dart';
 import '../features/admin/ui/stats_dashboard.dart';
 import '../features/admin/ui/agency_validation.dart';
