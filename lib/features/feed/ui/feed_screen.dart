@@ -1,63 +1,90 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mauritanie_news/app/router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shimmer/shimmer.dart';
+import 'package:gap/gap.dart';
 
-import 'package:mauritanie_news/shared/theme/app_theme.dart';
+import '../../../shared/theme/app_theme.dart';
+import '../providers/feed_providers.dart';
+import 'article_card.dart';
+import 'date_banner.dart';
+import 'category_filter.dart';
 
-class FeedScreen extends StatelessWidget {
+class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final articlesAsync = ref.watch(feedArticlesProvider);
+    final locale = ref.watch(appLocaleProvider);
+    final isAr = locale.languageCode == 'ar';
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.textOnPrimary,
-        title: Text(
-          'Fil d’actualité',
-          style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
-        ),
-        actions: const [SizedBox(width: AppSpacing.sm)],
-      ),
-      body: Padding(
-        padding: AppSpacing.pagePadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Écran Feed (UI à compléter).',
-              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            ElevatedButton(
-              onPressed: () => context.push(AppRoutes.agencyDashboard),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: AppColors.textOnPrimary,
-                shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
-              ),
-              child: Text(
-                'Espace agence',
-                style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textOnPrimary),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            ElevatedButton(
-              onPressed: () => context.push(AppRoutes.adminDashboard),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.surfaceVariant,
-                foregroundColor: AppColors.textPrimary,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: AppRadius.buttonRadius,
-                  side: BorderSide(color: AppColors.border),
+      body: RefreshIndicator(
+        onRefresh: () async => ref.invalidate(feedArticlesProvider),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              floating: true,
+              pinned: false,
+              centerTitle: false,
+              backgroundColor: AppColors.surface,
+              title: Text(
+                isAr ? 'موريتانيا نيوز' : 'Mauritanie News',
+                style: AppTextStyles.headlineLarge.copyWith(
+                  color: AppColors.primary,
+                  letterSpacing: isAr ? 0 : -0.5,
                 ),
               ),
-              child: Text(
-                'Espace administration',
-                style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textPrimary),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.language, color: AppColors.textSecondary),
+                  onPressed: () {
+                    final newLocale = isAr ? const Locale('fr') : const Locale('ar');
+                    ref.read(appLocaleProvider.notifier).state = newLocale;
+                  },
+                ),
+                const Gap(AppSpacing.sm),
+              ],
+            ),
+
+            SliverToBoxAdapter(
+              child: Column(
+                children: [
+                  const DateBanner(),
+                  const CategoryFilter(),
+                  const Gap(AppSpacing.sm),
+                ],
               ),
             ),
+
+            articlesAsync.when(
+              data: (articles) {
+                if (articles.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: _EmptyState(),
+                  );
+                }
+
+                return SliverPadding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) => ArticleCard(article: articles[index]),
+                      childCount: articles.length,
+                    ),
+                  ),
+                );
+              },
+              loading: () => const SliverFillRemaining(
+                child: _LoadingState(),
+              ),
+              error: (error, stack) => SliverFillRemaining(
+                child: _ErrorState(message: error.toString()),
+              ),
+            ),
+
+            const SliverToBoxAdapter(child: Gap(AppSpacing.huge)),
           ],
         ),
       ),
@@ -65,3 +92,87 @@ class FeedScreen extends StatelessWidget {
   }
 }
 
+class _LoadingState extends StatelessWidget {
+  const _LoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Shimmer.fromColors(
+        baseColor: AppColors.surfaceVariant,
+        highlightColor: AppColors.surface,
+        child: Column(
+          children: List.generate(3, (index) => Container(
+            height: 280,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadius.cardRadius,
+            ),
+          )),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends ConsumerWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isAr = ref.watch(appLocaleProvider).languageCode == 'ar';
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.newspaper, size: 64, color: AppColors.textTertiary),
+          const Gap(AppSpacing.lg),
+          Text(
+            isAr ? 'لا توجد مقالات متاحة' : 'Aucun article disponible',
+            style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textSecondary),
+          ),
+          const Gap(AppSpacing.sm),
+          Text(
+            isAr ? 'حاول تغيير التاريخ أو الفئة' : 'Essayez une autre date ou catégorie',
+            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textTertiary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+  const _ErrorState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+            const Gap(AppSpacing.md),
+            Text(
+              'Oups ! Une erreur est survenue',
+              style: AppTextStyles.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const Gap(AppSpacing.sm),
+            Text(
+              message,
+              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
