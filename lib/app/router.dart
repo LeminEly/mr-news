@@ -25,8 +25,10 @@ import '../features/admin/ui/agency_details_screen.dart';
 import '../features/admin/ui/articles_management.dart';
 import '../features/agency/ui/agency_dashboard_screen.dart';
 import '../features/webview/ui/article_webview_screen.dart';
+<<<<<<< HEAD
 import '../features/auth/ui/unified_auth_screen.dart';
 import '../features/auth/ui/auth_home_screen.dart';
+import '../features/feed/ui/splash_screen.dart';
 
 class AppRoutes {
   static const String splash = '/splash';
@@ -338,7 +340,6 @@ class AgencyDashboardGate extends ConsumerWidget {
         }
 
         if (agency.status == AgencyStatus.rejected) {
-          // TODO: Créer un écran spécifique pour les agences refusées
           return const AgencyPendingScreen();
         }
 
@@ -358,8 +359,6 @@ class AgencyDashboardGate extends ConsumerWidget {
       ),
       error: (err, stack) {
         debugPrint('AgencyDashboardGate Error: $err\n$stack');
-        // Si le profil n'est pas trouvé ou s'il y a une erreur, on affiche l'écran d'attente
-        // plutôt que l'écran d'erreur de connexion, pour une meilleure UX.
         return const AgencyPendingScreen();
       },
     );

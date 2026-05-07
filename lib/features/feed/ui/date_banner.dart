@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../providers/feed_providers.dart';
+import '../../../main.dart';
 
 class DateBanner extends ConsumerWidget {
   const DateBanner({super.key});

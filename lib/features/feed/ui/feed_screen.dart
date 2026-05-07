@@ -8,6 +8,7 @@ import '../providers/feed_providers.dart';
 import 'article_card.dart';
 import 'date_banner.dart';
 import 'category_filter.dart';
+import '../../../main.dart';
 
 class FeedScreen extends ConsumerWidget {
   const FeedScreen({super.key});

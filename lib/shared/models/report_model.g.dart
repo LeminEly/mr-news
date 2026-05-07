@@ -31,9 +31,10 @@ Map<String, dynamic> _$$ReportModelImplToJson(_$ReportModelImpl instance) =>
     };
 
 const _$ReportReasonEnumMap = {
-  ReportReason.spam: 'spam',
-  ReportReason.falseInfo: 'falseInfo',
-  ReportReason.offensive: 'offensive',
+  ReportReason.fakeNews: 'fakeNews',
+  ReportReason.inappropriate: 'inappropriate',
+  ReportReason.brokenLink: 'brokenLink',
+  ReportReason.duplicate: 'duplicate',
   ReportReason.other: 'other',
 };
 

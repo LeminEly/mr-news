@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+
 
 part 'category_model.freezed.dart';
 part 'category_model.g.dart';
@@ -21,5 +23,6 @@ class CategoryModel with _$CategoryModel {
 }
 
 extension CategoryModelX on CategoryModel {
-  String name(String locale) => locale == 'ar' ? nameAr : nameFr;
+  String name(Locale locale) => locale.languageCode == 'ar' ? nameAr : nameFr;
+
 }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../providers/feed_providers.dart';
 import '../../../shared/models/models.dart';
+import '../../../main.dart';
 
 class CategoryFilter extends ConsumerWidget {
   const CategoryFilter({super.key});

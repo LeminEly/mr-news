@@ -19,6 +19,16 @@ _$ArticleModelImpl _$$ArticleModelImplFromJson(Map<String, dynamic> json) =>
       publishedAt: DateTime.parse(json['published_at'] as String),
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
+      agencyName: json['agency_name'] as String?,
+      agencyLogoUrl: json['agency_logo_url'] as String?,
+      categoryNameAr: json['category_name_ar'] as String?,
+      categoryNameFr: json['category_name_fr'] as String?,
+      categoryIcon: json['category_icon'] as String?,
+      categoryColor: json['category_color'] as String?,
+      reactionCounts: json['reaction_counts'] == null
+          ? const ReactionCounts()
+          : ReactionCounts.fromJson(
+              json['reaction_counts'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$ArticleModelImplToJson(_$ArticleModelImpl instance) =>
@@ -34,6 +44,13 @@ Map<String, dynamic> _$$ArticleModelImplToJson(_$ArticleModelImpl instance) =>
       'published_at': instance.publishedAt.toIso8601String(),
       'created_at': instance.createdAt.toIso8601String(),
       'updated_at': instance.updatedAt.toIso8601String(),
+      'agency_name': instance.agencyName,
+      'agency_logo_url': instance.agencyLogoUrl,
+      'category_name_ar': instance.categoryNameAr,
+      'category_name_fr': instance.categoryNameFr,
+      'category_icon': instance.categoryIcon,
+      'category_color': instance.categoryColor,
+      'reaction_counts': instance.reactionCounts,
     };
 
 const _$ArticleLanguageEnumMap = {

@@ -4,7 +4,35 @@ export 'agency_model.dart';
 
 enum EmojiType { like, wow, sad, angry, fire }
 
-enum ReportReason { spam, falseInfo, offensive, other }
+enum ReportReason { 
+  fakeNews, 
+  inappropriate, 
+  brokenLink, 
+  duplicate, 
+  other 
+}
+
+extension ReportReasonX on ReportReason {
+  String get labelFr {
+    switch (this) {
+      case ReportReason.fakeNews: return "Fausse information";
+      case ReportReason.inappropriate: return "Contenu inapproprié";
+      case ReportReason.brokenLink: return "Lien cassé";
+      case ReportReason.duplicate: return "Article dupliqué";
+      case ReportReason.other: return "Autre";
+    }
+  }
+
+  String get labelAr {
+    switch (this) {
+      case ReportReason.fakeNews: return "معلومات مضللة";
+      case ReportReason.inappropriate: return "محتوى غير لائق";
+      case ReportReason.brokenLink: return "رابط معطل";
+      case ReportReason.duplicate: return "مقال مكرر";
+      case ReportReason.other: return "آخر";
+    }
+  }
+}
 
 class ReactionCounts {
   final int likeCount;
@@ -30,5 +58,12 @@ class ReactionCounts {
         angryCount: json['angry'] ?? 0,
         fireCount: json['fire'] ?? 0,
       );
-}
 
+  Map<String, dynamic> toJson() => {
+    'like': likeCount,
+    'wow': wowCount,
+    'sad': sadCount,
+    'angry': angryCount,
+    'fire': fireCount,
+  };
+}
