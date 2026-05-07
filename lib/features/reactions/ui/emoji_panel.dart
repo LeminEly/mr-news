@@ -116,12 +116,35 @@ class _EmojiItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color emojiColor;
+    IconData iconData;
+    String label;
+
     switch (emoji) {
-      case EmojiType.like:  emojiColor = AppColors.emojiLike; break;
-      case EmojiType.wow:   emojiColor = AppColors.emojiWow; break;
-      case EmojiType.sad:   emojiColor = AppColors.emojiSad; break;
-      case EmojiType.angry: emojiColor = AppColors.emojiAngry; break;
-      case EmojiType.fire:  emojiColor = AppColors.emojiFire; break;
+      case EmojiType.like:
+        emojiColor = AppColors.emojiLike;
+        iconData = Icons.thumb_up_rounded;
+        label = 'J\'aime';
+        break;
+      case EmojiType.wow:
+        emojiColor = AppColors.emojiWow;
+        iconData = Icons.auto_awesome_rounded;
+        label = 'Waouh';
+        break;
+      case EmojiType.sad:
+        emojiColor = AppColors.emojiSad;
+        iconData = Icons.sentiment_dissatisfied_rounded;
+        label = 'Triste';
+        break;
+      case EmojiType.angry:
+        emojiColor = AppColors.emojiAngry;
+        iconData = Icons.sentiment_very_dissatisfied_rounded;
+        label = 'Grrr';
+        break;
+      case EmojiType.fire:
+        emojiColor = AppColors.emojiFire;
+        iconData = Icons.local_fire_department_rounded;
+        label = 'Feu';
+        break;
     }
 
     return GestureDetector(
@@ -146,14 +169,15 @@ class _EmojiItem extends StatelessWidget {
                 )
               ] : null,
             ),
-            child: Text(
-              _getEmojiChar(emoji),
-              style: const TextStyle(fontSize: 28),
+            child: Icon(
+              iconData,
+              color: isSelected ? emojiColor : AppColors.textTertiary,
+              size: 28,
             ),
           ),
           const Gap(AppSpacing.sm),
           Text(
-            _getEmojiLabel(emoji),
+            label,
             style: AppTextStyles.labelSmall.copyWith(
               color: isSelected ? emojiColor : AppColors.textSecondary,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
@@ -162,25 +186,5 @@ class _EmojiItem extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _getEmojiChar(EmojiType type) {
-    switch (type) {
-      case EmojiType.like: return '👍';
-      case EmojiType.wow: return '😮';
-      case EmojiType.sad: return '😢';
-      case EmojiType.angry: return '😡';
-      case EmojiType.fire: return '🔥';
-    }
-  }
-
-  String _getEmojiLabel(EmojiType type) {
-    switch (type) {
-      case EmojiType.like: return 'J\'aime';
-      case EmojiType.wow: return 'Waouh';
-      case EmojiType.sad: return 'Triste';
-      case EmojiType.angry: return 'Grrr';
-      case EmojiType.fire: return 'Feu';
-    }
   }
 }
