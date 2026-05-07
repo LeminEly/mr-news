@@ -100,12 +100,18 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
+      if (_agency == null) {
+        final authService = AgencyAuthService(Supabase.instance.client);
+        _agency = await authService.getCurrentAgency();
+      }
+
       final agencyId = _agency?.id;
       if (agencyId == null) {
         if (!mounted) return;
         setState(() => _loading = false);
         return;
       }
+      
       final repo = ref.read(agencyRepositoryProvider);
       final categories = await repo.getCategories();
       final articles = await repo.getMyArticles(agencyId);

@@ -9,6 +9,7 @@ import 'core/constants/app_constants.dart';
 import 'shared/theme/app_theme.dart';
 import 'app/router.dart';
 import 'core/constants/env.dart';
+import 'features/feed/providers/feed_providers.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -45,7 +46,7 @@ Future<void> main() async {
         initialLocaleProvider.overrideWithValue(
           savedLang != null ? Locale(savedLang) : null,
         ),
-        initialOnboardingDoneProvider.overrideWithValue(onboardingDone),
+        onboardingDoneProvider.overrideWith((ref) => onboardingDone),
       ],
       child: const MauritanieNewsApp(),
     ),

@@ -29,8 +29,7 @@ class AgencyAuthService {
 
       // IMPORTANT (RLS):
       // La policy `agencies_insert_any_auth` exige un JWT valide (auth.uid()).
-      // Or, selon la config Supabase (email confirmation), signUp peut ne pas créer de session.
-      // On s'assure donc d'être authentifié avant l'insert.
+      // On s'assure d'être authentifié avant l'insert pour respecter les politiques RLS.
       if (_client.auth.currentSession == null) {
         await _client.auth.signInWithPassword(email: email, password: password);
       }

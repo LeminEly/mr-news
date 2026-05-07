@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mauritanie_news/app/router.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
@@ -78,11 +80,7 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
       // Pour l'instant, tous les comptes connectés accèdent au dashboard
 
       if (!mounted) return;
-      navigator.pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => AgencyDashboardScreen(agency: agency),
-        ),
-      );
+      context.go(AppRoutes.agencyDashboard, extra: agency);
     } catch (e) {
       if (!mounted) return;
       setState(() => _errorMessage = e.toString());

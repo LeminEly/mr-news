@@ -29,6 +29,8 @@ final currentUserRoleProvider = Provider<String>((ref) {
   return user.userMetadata?['role'] as String? ?? 'anonymous';
 });
 
+final onboardingDoneProvider = StateProvider<bool>((ref) => false);
+
 final isAdminProvider = Provider<bool>((ref) {
   return ref.watch(currentUserRoleProvider) == 'admin';
 });

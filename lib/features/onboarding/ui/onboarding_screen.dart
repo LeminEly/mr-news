@@ -115,7 +115,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     await prefs.setString(AppConstants.keyAppLanguage, ref.read(appLocaleProvider).languageCode);
     
     if (mounted) {
-      context.go(AppRoutes.feed);
+      ref.read(onboardingDoneProvider.notifier).state = true;
     }
   }
 }

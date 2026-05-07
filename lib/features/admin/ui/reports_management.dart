@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 class ReportsManagementScreen extends StatelessWidget {
@@ -17,8 +16,7 @@ class ReportsManagementScreen extends StatelessWidget {
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
         ),
       ),
-      body: Padding(
-        padding: AppSpacing.pagePadding,
+      body: Center(
         child: Text(
           'Gestion des signalements (à compléter).',
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
@@ -27,4 +25,3 @@ class ReportsManagementScreen extends StatelessWidget {
     );
   }
 }
-

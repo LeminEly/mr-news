@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -44,43 +45,46 @@ class AppRoutes {
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.watch(authStateProvider);
+  final onboardingDone = ref.watch(onboardingDoneProvider);
 
   return GoRouter(
-    initialLocation: AppRoutes.splash,
+    initialLocation: AppRoutes.feed,
     debugLogDiagnostics: true,
+    refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
     redirect: (context, state) {
-      final user = Supabase.instance.client.auth.currentUser;
-      final role = user?.userMetadata?['role'] as String?;
-      final isAuthenticated = user != null;
+      final session = Supabase.instance.client.auth.currentSession;
+      final isAuthenticated = session != null;
       final loc = state.matchedLocation;
 
-      // Splash -> laisse passer
-      if (loc == AppRoutes.splash) return null;
+      // 1. Onboarding check
+      if (!onboardingDone && loc != AppRoutes.onboarding) {
+        return AppRoutes.onboarding;
+      }
 
-      // Routes publiques 
-      final publicRoutes = [
+      // 2. Already onboarded, don't go back to onboarding
+      if (onboardingDone && loc == AppRoutes.onboarding) {
+        return AppRoutes.feed;
+      }
+
+      // 3. Fully public routes
+      const publicRoutes = [
+        AppRoutes.splash,
         AppRoutes.onboarding,
         AppRoutes.feed,
         AppRoutes.articleWebView,
         AppRoutes.agencyRegister,
         AppRoutes.agencyLogin,
       ];
-      if (publicRoutes.any((r) => loc.startsWith(r))) return null;
+      if (publicRoutes.any((r) => loc == r)) return null;
 
-      // Routes agence — doit etre auth + role agency
+      // 4. Agency routes
       if (loc.startsWith('/agency')) {
         if (!isAuthenticated) return AppRoutes.agencyLogin;
-        if (role != 'agency' && role != 'admin') return AppRoutes.feed;
         return null;
       }
 
-      // Routes admin — doit etre auth + role admin
-      if (loc.startsWith('/admin')) {
-        if (!isAuthenticated) return AppRoutes.agencyLogin;
-        if (role != 'admin') return AppRoutes.feed;
-        return null;
-      }
+      // 5. Admin routes
+      if (loc.startsWith('/admin')) return null;
 
       return null;
     },
@@ -217,4 +221,22 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
+
+/// Helper class to bridge Stream with ChangeNotifier for GoRouter
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    notifyListeners();
+    _subscription = stream.asBroadcastStream().listen(
+          (dynamic _) => notifyListeners(),
+        );
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
 
