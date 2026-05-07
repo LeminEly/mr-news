@@ -30,7 +30,14 @@ mixin _$ArticleModel {
   bool get isActive => throw _privateConstructorUsedError;
   DateTime get publishedAt => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
-  DateTime get updatedAt => throw _privateConstructorUsedError;
+  DateTime get updatedAt => throw _privateConstructorUsedError; // Joined fields
+  String? get agencyName => throw _privateConstructorUsedError;
+  String? get agencyLogoUrl => throw _privateConstructorUsedError;
+  String? get categoryNameAr => throw _privateConstructorUsedError;
+  String? get categoryNameFr => throw _privateConstructorUsedError;
+  String? get categoryIcon => throw _privateConstructorUsedError;
+  String? get categoryColor => throw _privateConstructorUsedError;
+  ReactionCounts get reactionCounts => throw _privateConstructorUsedError;
 
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
   @JsonKey(ignore: true)
@@ -55,7 +62,14 @@ abstract class $ArticleModelCopyWith<$Res> {
       bool isActive,
       DateTime publishedAt,
       DateTime createdAt,
-      DateTime updatedAt});
+      DateTime updatedAt,
+      String? agencyName,
+      String? agencyLogoUrl,
+      String? categoryNameAr,
+      String? categoryNameFr,
+      String? categoryIcon,
+      String? categoryColor,
+      ReactionCounts reactionCounts});
 }
 
 /// @nodoc
@@ -82,6 +96,13 @@ class _$ArticleModelCopyWithImpl<$Res, $Val extends ArticleModel>
     Object? publishedAt = null,
     Object? createdAt = null,
     Object? updatedAt = null,
+    Object? agencyName = freezed,
+    Object? agencyLogoUrl = freezed,
+    Object? categoryNameAr = freezed,
+    Object? categoryNameFr = freezed,
+    Object? categoryIcon = freezed,
+    Object? categoryColor = freezed,
+    Object? reactionCounts = null,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -128,6 +149,34 @@ class _$ArticleModelCopyWithImpl<$Res, $Val extends ArticleModel>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      agencyName: freezed == agencyName
+          ? _value.agencyName
+          : agencyName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      agencyLogoUrl: freezed == agencyLogoUrl
+          ? _value.agencyLogoUrl
+          : agencyLogoUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryNameAr: freezed == categoryNameAr
+          ? _value.categoryNameAr
+          : categoryNameAr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryNameFr: freezed == categoryNameFr
+          ? _value.categoryNameFr
+          : categoryNameFr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryIcon: freezed == categoryIcon
+          ? _value.categoryIcon
+          : categoryIcon // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryColor: freezed == categoryColor
+          ? _value.categoryColor
+          : categoryColor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      reactionCounts: null == reactionCounts
+          ? _value.reactionCounts
+          : reactionCounts // ignore: cast_nullable_to_non_nullable
+              as ReactionCounts,
     ) as $Val);
   }
 }
@@ -151,7 +200,14 @@ abstract class _$$ArticleModelImplCopyWith<$Res>
       bool isActive,
       DateTime publishedAt,
       DateTime createdAt,
-      DateTime updatedAt});
+      DateTime updatedAt,
+      String? agencyName,
+      String? agencyLogoUrl,
+      String? categoryNameAr,
+      String? categoryNameFr,
+      String? categoryIcon,
+      String? categoryColor,
+      ReactionCounts reactionCounts});
 }
 
 /// @nodoc
@@ -176,6 +232,13 @@ class __$$ArticleModelImplCopyWithImpl<$Res>
     Object? publishedAt = null,
     Object? createdAt = null,
     Object? updatedAt = null,
+    Object? agencyName = freezed,
+    Object? agencyLogoUrl = freezed,
+    Object? categoryNameAr = freezed,
+    Object? categoryNameFr = freezed,
+    Object? categoryIcon = freezed,
+    Object? categoryColor = freezed,
+    Object? reactionCounts = null,
   }) {
     return _then(_$ArticleModelImpl(
       id: null == id
@@ -222,6 +285,34 @@ class __$$ArticleModelImplCopyWithImpl<$Res>
           ? _value.updatedAt
           : updatedAt // ignore: cast_nullable_to_non_nullable
               as DateTime,
+      agencyName: freezed == agencyName
+          ? _value.agencyName
+          : agencyName // ignore: cast_nullable_to_non_nullable
+              as String?,
+      agencyLogoUrl: freezed == agencyLogoUrl
+          ? _value.agencyLogoUrl
+          : agencyLogoUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryNameAr: freezed == categoryNameAr
+          ? _value.categoryNameAr
+          : categoryNameAr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryNameFr: freezed == categoryNameFr
+          ? _value.categoryNameFr
+          : categoryNameFr // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryIcon: freezed == categoryIcon
+          ? _value.categoryIcon
+          : categoryIcon // ignore: cast_nullable_to_non_nullable
+              as String?,
+      categoryColor: freezed == categoryColor
+          ? _value.categoryColor
+          : categoryColor // ignore: cast_nullable_to_non_nullable
+              as String?,
+      reactionCounts: null == reactionCounts
+          ? _value.reactionCounts
+          : reactionCounts // ignore: cast_nullable_to_non_nullable
+              as ReactionCounts,
     ));
   }
 }
@@ -240,7 +331,14 @@ class _$ArticleModelImpl implements _ArticleModel {
       required this.isActive,
       required this.publishedAt,
       required this.createdAt,
-      required this.updatedAt});
+      required this.updatedAt,
+      this.agencyName,
+      this.agencyLogoUrl,
+      this.categoryNameAr,
+      this.categoryNameFr,
+      this.categoryIcon,
+      this.categoryColor,
+      this.reactionCounts = const ReactionCounts()});
 
   factory _$ArticleModelImpl.fromJson(Map<String, dynamic> json) =>
       _$$ArticleModelImplFromJson(json);
@@ -267,10 +365,26 @@ class _$ArticleModelImpl implements _ArticleModel {
   final DateTime createdAt;
   @override
   final DateTime updatedAt;
+// Joined fields
+  @override
+  final String? agencyName;
+  @override
+  final String? agencyLogoUrl;
+  @override
+  final String? categoryNameAr;
+  @override
+  final String? categoryNameFr;
+  @override
+  final String? categoryIcon;
+  @override
+  final String? categoryColor;
+  @override
+  @JsonKey()
+  final ReactionCounts reactionCounts;
 
   @override
   String toString() {
-    return 'ArticleModel(id: $id, agencyId: $agencyId, categoryId: $categoryId, title: $title, sourceUrl: $sourceUrl, coverImageUrl: $coverImageUrl, language: $language, isActive: $isActive, publishedAt: $publishedAt, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'ArticleModel(id: $id, agencyId: $agencyId, categoryId: $categoryId, title: $title, sourceUrl: $sourceUrl, coverImageUrl: $coverImageUrl, language: $language, isActive: $isActive, publishedAt: $publishedAt, createdAt: $createdAt, updatedAt: $updatedAt, agencyName: $agencyName, agencyLogoUrl: $agencyLogoUrl, categoryNameAr: $categoryNameAr, categoryNameFr: $categoryNameFr, categoryIcon: $categoryIcon, categoryColor: $categoryColor, reactionCounts: $reactionCounts)';
   }
 
   @override
@@ -297,7 +411,21 @@ class _$ArticleModelImpl implements _ArticleModel {
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
             (identical(other.updatedAt, updatedAt) ||
-                other.updatedAt == updatedAt));
+                other.updatedAt == updatedAt) &&
+            (identical(other.agencyName, agencyName) ||
+                other.agencyName == agencyName) &&
+            (identical(other.agencyLogoUrl, agencyLogoUrl) ||
+                other.agencyLogoUrl == agencyLogoUrl) &&
+            (identical(other.categoryNameAr, categoryNameAr) ||
+                other.categoryNameAr == categoryNameAr) &&
+            (identical(other.categoryNameFr, categoryNameFr) ||
+                other.categoryNameFr == categoryNameFr) &&
+            (identical(other.categoryIcon, categoryIcon) ||
+                other.categoryIcon == categoryIcon) &&
+            (identical(other.categoryColor, categoryColor) ||
+                other.categoryColor == categoryColor) &&
+            (identical(other.reactionCounts, reactionCounts) ||
+                other.reactionCounts == reactionCounts));
   }
 
   @JsonKey(ignore: true)
@@ -314,7 +442,14 @@ class _$ArticleModelImpl implements _ArticleModel {
       isActive,
       publishedAt,
       createdAt,
-      updatedAt);
+      updatedAt,
+      agencyName,
+      agencyLogoUrl,
+      categoryNameAr,
+      categoryNameFr,
+      categoryIcon,
+      categoryColor,
+      reactionCounts);
 
   @JsonKey(ignore: true)
   @override
@@ -342,7 +477,14 @@ abstract class _ArticleModel implements ArticleModel {
       required final bool isActive,
       required final DateTime publishedAt,
       required final DateTime createdAt,
-      required final DateTime updatedAt}) = _$ArticleModelImpl;
+      required final DateTime updatedAt,
+      final String? agencyName,
+      final String? agencyLogoUrl,
+      final String? categoryNameAr,
+      final String? categoryNameFr,
+      final String? categoryIcon,
+      final String? categoryColor,
+      final ReactionCounts reactionCounts}) = _$ArticleModelImpl;
 
   factory _ArticleModel.fromJson(Map<String, dynamic> json) =
       _$ArticleModelImpl.fromJson;
@@ -369,6 +511,20 @@ abstract class _ArticleModel implements ArticleModel {
   DateTime get createdAt;
   @override
   DateTime get updatedAt;
+  @override // Joined fields
+  String? get agencyName;
+  @override
+  String? get agencyLogoUrl;
+  @override
+  String? get categoryNameAr;
+  @override
+  String? get categoryNameFr;
+  @override
+  String? get categoryIcon;
+  @override
+  String? get categoryColor;
+  @override
+  ReactionCounts get reactionCounts;
   @override
   @JsonKey(ignore: true)
   _$$ArticleModelImplCopyWith<_$ArticleModelImpl> get copyWith =>

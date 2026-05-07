@@ -356,7 +356,7 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                         ..._categories.map((c) {
                           final sel = _filterCategoryId == c.id;
                           final locale =
-                              Localizations.localeOf(context).languageCode;
+                              Localizations.localeOf(context);
                           return _FilterChip(
                             label: '${c.icon} ${c.name(locale)}',
                             selected: sel,

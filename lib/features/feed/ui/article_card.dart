@@ -9,7 +9,8 @@ import 'package:gap/gap.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/models/article_model.dart';
 import '../providers/feed_providers.dart';
-import '../../app/router.dart';
+import '../../../app/router.dart';
+import '../../../main.dart';
 
 class ArticleCard extends ConsumerWidget {
   final ArticleModel article;
@@ -22,7 +23,6 @@ class ArticleCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final locale = ref.watch(appLocaleProvider);
-    final myReactionAsync = ref.watch(myReactionProvider(article.id));
     final isRtl = article.language == ArticleLanguage.ar;
 
     return Container(
@@ -41,6 +41,7 @@ class ArticleCard extends ConsumerWidget {
             extra: {
               'url': article.sourceUrl,
               'title': article.title,
+              'articleId': article.id,
             },
           ),
           child: Column(

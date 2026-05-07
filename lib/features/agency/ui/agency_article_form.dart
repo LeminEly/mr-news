@@ -425,7 +425,8 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
               child: Text(
                 cat == null
                     ? 'Catégorie'
-                    : '${cat.icon} ${cat.name(Localizations.localeOf(context).languageCode)}',
+                    : '${cat.icon} ${cat.name(Localizations.localeOf(context))}',
+
                 style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary),
               ),
             ),
@@ -659,7 +660,8 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     width: w,
                     child: FilterChip(
                       label: Text(
-                        '${e.icon} ${e.name(Localizations.localeOf(context).languageCode)}',
+                        '${e.icon} ${e.name(Localizations.localeOf(context))}',
+
                         textAlign: TextAlign.center,
                       ),
                       selected: sel,

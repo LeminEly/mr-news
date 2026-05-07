@@ -78,7 +78,7 @@ class ArticleCardAgency extends StatelessWidget {
   Widget build(BuildContext context) {
     final cover = article.coverImageUrl;
 
-    final categoryLocale = article.language.name;
+    final categoryLocale = Locale(article.language.name);
     final categoryLabel = category?.name(categoryLocale) ?? '';
     final categoryIcon = category?.icon ?? '';
     final catColor = _categoryColorFromHexOrDefault(category?.colorHex);

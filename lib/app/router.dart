@@ -18,6 +18,8 @@ import '../features/admin/ui/reports_management.dart';
 import '../features/admin/ui/categories_management.dart';
 import '../features/admin/ui/agencies_list.dart';
 import '../features/webview/ui/article_webview_screen.dart';
+import '../features/feed/ui/splash_screen.dart';
+
 
 // Route names
 class AppRoutes {
@@ -211,27 +213,3 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.go(AppRoutes.feed);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
-}

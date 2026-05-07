@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'models.dart';
 
 part 'article_model.freezed.dart';
 part 'article_model.g.dart';
@@ -19,6 +21,15 @@ class ArticleModel with _$ArticleModel {
     required DateTime publishedAt,
     required DateTime createdAt,
     required DateTime updatedAt,
+    
+    // Joined fields
+    String? agencyName,
+    String? agencyLogoUrl,
+    String? categoryNameAr,
+    String? categoryNameFr,
+    String? categoryIcon,
+    String? categoryColor,
+    @Default(ReactionCounts()) ReactionCounts reactionCounts,
   }) = _ArticleModel;
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) =>
@@ -30,5 +41,7 @@ class ArticleModel with _$ArticleModel {
 extension ArticleModelX on ArticleModel {
   bool get isRtl => language == ArticleLanguage.ar;
 
-  String categoryName(String locale) => '';
+  String? categoryName(Locale locale) {
+    return locale.languageCode == 'ar' ? categoryNameAr : categoryNameFr;
+  }
 }
