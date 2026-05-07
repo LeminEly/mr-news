@@ -45,46 +45,32 @@ class AppRoutes {
 
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  final onboardingDone = ref.watch(onboardingDoneProvider);
+  final authNotifier = ref.watch(routerAuthNotifierProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.feed,
     debugLogDiagnostics: true,
-    refreshListenable: GoRouterRefreshStream(Supabase.instance.client.auth.onAuthStateChange),
+    refreshListenable: authNotifier,
     redirect: (context, state) {
-      final session = Supabase.instance.client.auth.currentSession;
-      final isAuthenticated = session != null;
+      final isAuthenticated = authNotifier.isAuthenticated;
+      final onboardingDone = authNotifier.onboardingDone;
       final loc = state.matchedLocation;
 
-      // 1. Onboarding check
-      if (!onboardingDone && loc != AppRoutes.onboarding) {
+      // 1. Onboarding check (Only for non-pro routes)
+      final isProRoute = loc.startsWith('/agency') || loc.startsWith('/admin');
+      if (!onboardingDone && loc != AppRoutes.onboarding && !isProRoute) {
         return AppRoutes.onboarding;
       }
 
-      // 2. Already onboarded, don't go back to onboarding
+      // 2. Prevent going back to onboarding
       if (onboardingDone && loc == AppRoutes.onboarding) {
         return AppRoutes.feed;
       }
 
-      // 3. Fully public routes
-      const publicRoutes = [
-        AppRoutes.splash,
-        AppRoutes.onboarding,
-        AppRoutes.feed,
-        AppRoutes.articleWebView,
-        AppRoutes.agencyRegister,
-        AppRoutes.agencyLogin,
-      ];
-      if (publicRoutes.any((r) => loc == r)) return null;
-
-      // 4. Agency routes
-      if (loc.startsWith('/agency')) {
+      // 3. Auth Guard for Agency
+      if (loc.startsWith('/agency') && loc != AppRoutes.agencyLogin && loc != AppRoutes.agencyRegister) {
         if (!isAuthenticated) return AppRoutes.agencyLogin;
-        return null;
       }
-
-      // 5. Admin routes
-      if (loc.startsWith('/admin')) return null;
 
       return null;
     },
@@ -222,20 +208,32 @@ final routerProvider = Provider<GoRouter>((ref) {
   );
 });
 
-/// Helper class to bridge Stream with ChangeNotifier for GoRouter
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(Stream<dynamic> stream) {
-    notifyListeners();
-    _subscription = stream.asBroadcastStream().listen(
-          (dynamic _) => notifyListeners(),
-        );
+// Auth Notifier for Router
+final routerAuthNotifierProvider = Provider<RouterAuthNotifier>((ref) {
+  return RouterAuthNotifier(ref);
+});
+
+class RouterAuthNotifier extends ChangeNotifier {
+  RouterAuthNotifier(this._ref) {
+    // Listen to auth changes
+    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      notifyListeners();
+    });
+    // Listen to onboarding changes
+    _ref.listen(onboardingDoneProvider, (_, __) {
+      notifyListeners();
+    });
   }
 
-  late final StreamSubscription<dynamic> _subscription;
+  final Ref _ref;
+  late final StreamSubscription<dynamic> _authSub;
+
+  bool get isAuthenticated => Supabase.instance.client.auth.currentSession != null;
+  bool get onboardingDone => _ref.read(onboardingDoneProvider);
 
   @override
   void dispose() {
-    _subscription.cancel();
+    _authSub.cancel();
     super.dispose();
   }
 }
