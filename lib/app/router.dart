@@ -82,7 +82,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           isAuthenticated) {
         if (role == 'admin') return AppRoutes.adminDashboard;
         if (role == 'agency') return AppRoutes.agencyDashboard;
-        return AppRoutes.feed; // Default for readers
+        return AppRoutes.feed;
       }
 
       // Allow access to public routes
@@ -106,7 +106,6 @@ final routerProvider = Provider<GoRouter>((ref) {
 
       // Agency routes protection
       if (loc.startsWith('/agency')) {
-        // Allow if role is agency or admin
         if (role == 'agency' || role == 'admin') return null;
         return AppRoutes.feed;
       }
@@ -116,6 +115,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (role == 'admin') return null;
         return AppRoutes.feed;
       }
+
 
       return null;
     },
@@ -305,6 +305,24 @@ class SplashScreen extends StatefulWidget {
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      context.go(AppRoutes.authHome);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(child: CircularProgressIndicator()),
+    );
+  }
 }
 
 class _SplashScreenState extends State<SplashScreen> {
