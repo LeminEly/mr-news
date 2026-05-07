@@ -67,10 +67,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.newspaper_rounded,
-                  size: 80,
-                  color: AppColors.primary,
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 80,
+                  height: 80,
                 ),
               ),
             ),
