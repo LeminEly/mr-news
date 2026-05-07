@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:gap/gap.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
@@ -335,12 +336,12 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                   icon: Icons.category_outlined,
                 ),
                 items: const [
-                  DropdownMenuItem(value: MediaType.newsAgency, child: Text('📡 Agence de presse')),
-                  DropdownMenuItem(value: MediaType.newspaper, child: Text('📰 Presse écrite')),
-                  DropdownMenuItem(value: MediaType.blog, child: Text('✍️ Blog')),
-                  DropdownMenuItem(value: MediaType.tvChannel, child: Text('📺 Télévision')),
-                  DropdownMenuItem(value: MediaType.radio, child: Text('📻 Radio')),
-                  DropdownMenuItem(value: MediaType.other, child: Text('📌 Autre')),
+                  DropdownMenuItem(value: MediaType.newsAgency, child: Row(children: [Icon(Icons.rss_feed_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Agence de presse')])),
+                  DropdownMenuItem(value: MediaType.newspaper, child: Row(children: [Icon(Icons.newspaper_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Presse écrite')])),
+                  DropdownMenuItem(value: MediaType.blog, child: Row(children: [Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Blog')])),
+                  DropdownMenuItem(value: MediaType.tvChannel, child: Row(children: [Icon(Icons.tv_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Télévision')])),
+                  DropdownMenuItem(value: MediaType.radio, child: Row(children: [Icon(Icons.radio_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Radio')])),
+                  DropdownMenuItem(value: MediaType.other, child: Row(children: [Icon(Icons.more_horiz_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Autre')])),
                 ],
                 onChanged: (v) {
                   if (v == null) return;

@@ -25,7 +25,6 @@ import '../features/admin/ui/agency_details_screen.dart';
 import '../features/admin/ui/articles_management.dart';
 import '../features/agency/ui/agency_dashboard_screen.dart';
 import '../features/webview/ui/article_webview_screen.dart';
-<<<<<<< HEAD
 import '../features/auth/ui/unified_auth_screen.dart';
 import '../features/auth/ui/auth_home_screen.dart';
 import '../features/feed/ui/splash_screen.dart';
@@ -187,7 +186,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AgencyPendingScreen(),
       ),
 
-      // Agence : Dashboard
       GoRoute(
         path: AppRoutes.agencyDashboard,
         name: 'agency-dashboard',
