@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:gap/gap.dart';
 
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/widgets/reader_drawer.dart';
 import '../providers/feed_providers.dart';
 import 'article_card.dart';
 import 'date_banner.dart';
@@ -18,9 +19,12 @@ class FeedScreen extends ConsumerWidget {
     final articlesAsync = ref.watch(feedArticlesProvider);
     final locale = ref.watch(appLocaleProvider);
     final isAr = locale.languageCode == 'ar';
+    final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
     return Scaffold(
+      key: scaffoldKey,
       backgroundColor: AppColors.background,
+      drawer: const ReaderDrawer(),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(feedArticlesProvider),
         child: CustomScrollView(
@@ -31,6 +35,10 @@ class FeedScreen extends ConsumerWidget {
               pinned: false,
               centerTitle: false,
               backgroundColor: AppColors.surface,
+              leading: IconButton(
+                icon: const Icon(Icons.menu_rounded, color: AppColors.primary),
+                onPressed: () => scaffoldKey.currentState?.openDrawer(),
+              ),
               title: Text(
                 isAr ? 'موريتانيا نيوز' : 'Mauritanie News',
                 style: AppTextStyles.headlineLarge.copyWith(
@@ -40,10 +48,9 @@ class FeedScreen extends ConsumerWidget {
               ),
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.language, color: AppColors.textSecondary),
+                  icon: const Icon(Icons.search_rounded, color: AppColors.textSecondary),
                   onPressed: () {
-                    final newLocale = isAr ? const Locale('fr') : const Locale('ar');
-                    ref.read(appLocaleProvider.notifier).state = newLocale;
+                    // TODO: Implement Search
                   },
                 ),
                 const Gap(AppSpacing.sm),

@@ -112,8 +112,8 @@ class AgencyDrawer extends StatelessWidget {
                 padding: EdgeInsets.zero,
                 children: [
                   _DrawerTile(
-                    icon: '🏠',
-                    label: 'Dashboard',
+                    icon: Icons.dashboard_rounded,
+                    label: 'Tableau de bord',
                     selected: selectedItem == AgencyDrawerSelection.dashboard,
                     onTap: () {
                       onDashboard();
@@ -121,7 +121,7 @@ class AgencyDrawer extends StatelessWidget {
                     },
                   ),
                   _DrawerTile(
-                    icon: '📝',
+                    icon: Icons.edit_note_rounded,
                     label: 'Publier un article',
                     selected: selectedItem == AgencyDrawerSelection.publish,
                     onTap: () {
@@ -130,7 +130,7 @@ class AgencyDrawer extends StatelessWidget {
                     },
                   ),
                   _DrawerTile(
-                    icon: '👤',
+                    icon: Icons.person_outline_rounded,
                     label: 'Mon Profil',
                     selected: false,
                     onTap: () {
@@ -140,7 +140,7 @@ class AgencyDrawer extends StatelessWidget {
                   ),
                   const Divider(height: 1, color: AppColors.divider),
                   _DrawerTile(
-                    icon: '🚪',
+                    icon: Icons.logout_rounded,
                     label: 'Déconnexion',
                     selected: false,
                     danger: true,
@@ -201,29 +201,34 @@ class _StatusBadge extends StatelessWidget {
     final s = status;
     final label = () {
       switch (s) {
-        case AgencyStatus.approved:
-          return '✅ Approuvée';
-        case AgencyStatus.pending:
-          return '⏳ En attente';
-        case AgencyStatus.rejected:
-          return '❌ Rejetée';
-        case AgencyStatus.suspended:
-          return '⛔ Suspendue';
-        case null:
-          return '—';
+        case AgencyStatus.approved: return 'Approuvée';
+        case AgencyStatus.pending: return 'En attente';
+        case AgencyStatus.rejected: return 'Rejetée';
+        case AgencyStatus.suspended: return 'Suspendue';
+        case null: return '—';
+      }
+    }();
+
+    final icon = () {
+      switch (s) {
+        case AgencyStatus.approved: return Icons.check_circle_rounded;
+        case AgencyStatus.pending: return Icons.access_time_rounded;
+        case AgencyStatus.rejected: return Icons.cancel_rounded;
+        case AgencyStatus.suspended: return Icons.block_rounded;
+        case null: return Icons.help_outline_rounded;
       }
     }();
 
     final (bg, fg, border) = () {
       switch (s) {
         case AgencyStatus.approved:
-          return (AppColors.successLight, AppColors.success, AppColors.success);
+          return (AppColors.success.withOpacity(0.1), AppColors.success, AppColors.success);
         case AgencyStatus.pending:
-          return (AppColors.warningLight, AppColors.warning, AppColors.warning);
+          return (AppColors.warning.withOpacity(0.1), AppColors.warning, AppColors.warning);
         case AgencyStatus.rejected:
-          return (AppColors.errorLight, AppColors.error, AppColors.error);
+          return (AppColors.error.withOpacity(0.1), AppColors.error, AppColors.error);
         case AgencyStatus.suspended:
-          return (AppColors.errorLight, AppColors.error, AppColors.error);
+          return (AppColors.error.withOpacity(0.1), AppColors.error, AppColors.error);
         case null:
           return (AppColors.surfaceVariant, AppColors.textSecondary, AppColors.border);
       }
@@ -232,15 +237,22 @@ class _StatusBadge extends StatelessWidget {
     return Align(
       alignment: Alignment.centerLeft,
       child: Container(
-        padding: AppSpacing.chipPadding,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: AppRadius.chipRadius,
-          border: Border.all(color: border),
+          border: Border.all(color: border.withOpacity(0.3)),
         ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelMedium.copyWith(color: fg),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: AppTextStyles.labelMedium.copyWith(color: fg, fontWeight: FontWeight.bold),
+            ),
+          ],
         ),
       ),
     );
@@ -256,7 +268,7 @@ class _DrawerTile extends StatelessWidget {
     this.danger = false,
   });
 
-  final String icon;
+  final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -264,8 +276,9 @@ class _DrawerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? AppColors.primarySurface : Colors.transparent;
+    final bg = selected ? AppColors.primary.withOpacity(0.08) : Colors.transparent;
     final textColor = danger ? AppColors.error : AppColors.textPrimary;
+    final iconColor = selected ? AppColors.primary : (danger ? AppColors.error : AppColors.textSecondary);
 
     return Material(
       color: bg,
@@ -274,21 +287,30 @@ class _DrawerTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
+            vertical: AppSpacing.md + 2,
           ),
           child: Row(
             children: [
-              Text(icon, style: AppTextStyles.headlineSmall),
-              const SizedBox(width: AppSpacing.md),
+              Icon(icon, color: iconColor, size: 24),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: Text(
                   label,
                   style: AppTextStyles.bodyLarge.copyWith(
                     color: textColor,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: selected ? FontWeight.bold : FontWeight.w500,
                   ),
                 ),
               ),
+              if (selected)
+                Container(
+                  width: 4,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
             ],
           ),
         ),
