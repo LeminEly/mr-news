@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:gap/gap.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
@@ -91,9 +92,16 @@ class _AgencyPendingScreenState extends State<AgencyPendingScreen> {
                   borderRadius: AppRadius.chipRadius,
                   border: Border.all(color: AppColors.warning),
                 ),
-                child: Text(
-                  '⏳ En attente',
-                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.warning),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time_rounded, size: 16, color: AppColors.warning),
+                    const Gap(AppSpacing.sm),
+                    Text(
+                      'En attente',
+                      style: AppTextStyles.labelMedium.copyWith(color: AppColors.warning, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: AppSpacing.xxl),

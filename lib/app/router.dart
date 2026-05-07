@@ -6,9 +6,9 @@ import '../features/feed/providers/feed_providers.dart';
 
 import '../features/feed/ui/feed_screen.dart';
 import '../features/onboarding/ui/onboarding_screen.dart';
-import '../features/agency/ui/agency_register.dart';
-import '../features/agency/ui/agency_login.dart';
-import '../features/agency/ui/agency_pending.dart';
+import '../features/agency/ui/agency_register_screen.dart';
+import '../features/agency/ui/agency_login_screen.dart';
+import '../features/agency/ui/agency_pending_screen.dart';
 import '../features/agency/ui/publish_article_screen.dart';
 import '../features/agency/ui/agency_profile.dart';
 import '../shared/models/agency_model.dart';
@@ -136,11 +136,15 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const AgencyPendingScreen(),
       ),
 
-      // Agence : Dashboard
       GoRoute(
         path: AppRoutes.agencyDashboard,
         name: 'agency-dashboard',
-        builder: (context, state) => const AgencyLoginScreen(),
+        builder: (context, state) {
+          final extra = state.extra;
+          return AgencyDashboardScreen(
+            agency: extra is AgencyModel ? extra : null,
+          );
+        },
       ),
 
       // Agence : Publier

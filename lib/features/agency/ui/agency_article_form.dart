@@ -417,8 +417,8 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
-              padding: AppSpacing.chipPadding,
-              decoration: const BoxDecoration(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
                 color: AppColors.primary,
                 borderRadius: AppRadius.chipRadius,
               ),
@@ -426,8 +426,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                 cat == null
                     ? 'Catégorie'
                     : '${cat.icon} ${cat.name(Localizations.localeOf(context))}',
-
-                style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary),
+                style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary, fontWeight: FontWeight.bold),
               ),
             ),
           ),
@@ -480,14 +479,14 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            isEdit ? '💾 Sauvegarder les modifications' : '✅ Publier l’article',
+            isEdit ? 'Sauvegarder les modifications' : 'Publier l’article',
             style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
           ),
         ],
       );
     } else {
       content = Text(
-        isEdit ? '💾 Sauvegarder les modifications' : '✅ Publier l’article',
+        isEdit ? 'Sauvegarder les modifications' : 'Publier l’article',
         style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
       );
     }
@@ -586,7 +585,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     onPressed: _pickImage,
                     icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
                     label: Text(
-                      '📷 Choisir une image',
+                      'Choisir une image',
                       style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -601,7 +600,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     onPressed: _promptCoverUrl,
                     icon: const Icon(Icons.link, color: AppColors.secondary),
                     label: Text(
-                      '🔗 Depuis une URL',
+                      'Depuis une URL',
                       style: AppTextStyles.buttonMedium.copyWith(color: AppColors.secondary),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -624,8 +623,8 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           const SizedBox(height: AppSpacing.sm),
           SegmentedButton<String>(
             segments: const [
-              ButtonSegment(value: 'fr', label: Text('🇫🇷 Français')),
-              ButtonSegment(value: 'ar', label: Text('🇲🇷 العربية')),
+              ButtonSegment(value: 'fr', label: Text('Français')),
+              ButtonSegment(value: 'ar', label: Text('العربية')),
             ],
             selected: {_language.name},
             emptySelectionAllowed: false,
@@ -661,7 +660,6 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     child: FilterChip(
                       label: Text(
                         '${e.icon} ${e.name(Localizations.localeOf(context))}',
-
                         textAlign: TextAlign.center,
                       ),
                       selected: sel,

@@ -256,14 +256,14 @@ class _CategoryBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: AppSpacing.chipPadding,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: background,
         borderRadius: AppRadius.chipRadius,
       ),
       child: Text(
         label,
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary),
+        style: AppTextStyles.labelMedium.copyWith(color: AppColors.textOnPrimary, fontWeight: FontWeight.bold),
       ),
     );
   }
@@ -278,15 +278,15 @@ class _LangBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isFr = language == ArticleLanguage.fr;
     return Container(
-      padding: AppSpacing.chipPadding,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.surface.withValues(alpha: 0.92),
         borderRadius: AppRadius.chipRadius,
         border: Border.all(color: AppColors.border),
       ),
       child: Text(
-        isFr ? '🇫🇷 FR' : '🇲🇷 AR',
-        style: AppTextStyles.labelMedium.copyWith(color: AppColors.textPrimary),
+        isFr ? 'FR' : 'AR',
+        style: AppTextStyles.labelMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
       ),
     );
   }
