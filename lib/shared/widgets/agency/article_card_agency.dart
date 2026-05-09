@@ -280,7 +280,7 @@ class _LangBadge extends StatelessWidget {
     return Container(
       padding: AppSpacing.chipPadding,
       decoration: BoxDecoration(
-        color: AppColors.surface.withValues(alpha: 0.92),
+        color: AppColors.surface.withOpacity(0.92),
         borderRadius: AppRadius.chipRadius,
         border: Border.all(color: AppColors.border),
       ),

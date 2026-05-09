@@ -41,6 +41,7 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   List<ArticleModel> _articles = const [];
   List<CategoryModel> _categories = const [];
   bool _loading = true;
+  String? _errorMessage;
   String? _filterCategoryId;
 
   late final AnimationController _appBarGradientCtrl;
@@ -98,7 +99,10 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   }
 
   Future<void> _load() async {
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
     try {
       final agencyId = _agency?.id;
       if (agencyId == null) {
@@ -107,27 +111,26 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
         return;
       }
       final repo = ref.read(agencyRepositoryProvider);
-      final categories = await repo.getCategories();
-      final articles = await repo.getMyArticles(agencyId);
+      
+      // Parallelize fetching for better performance
+      final results = await Future.wait([
+        repo.getCategories(),
+        repo.getMyArticles(agencyId),
+      ]);
+
       if (!mounted) return;
       setState(() {
-        _categories = categories;
-        _articles = articles;
+        _categories = results[0] as List<CategoryModel>;
+        _articles = results[1] as List<ArticleModel>;
         _loading = false;
       });
-    } catch (_) {
+    } catch (e) {
+      debugPrint('AgencyDashboardScreen load error: $e');
       if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.error,
-          content: Text(
-            'Erreur de chargement',
-            style:
-                AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
-          ),
-        ),
-      );
+      setState(() {
+        _loading = false;
+        _errorMessage = 'Erreur lors du chargement des données : $e';
+      });
     }
   }
 
@@ -376,6 +379,29 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
               hasScrollBody: false,
               child: Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+            )
+          else if (_errorMessage != null)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AppColors.error, size: 48),
+                      const SizedBox(height: AppSpacing.md),
+                      Text(_errorMessage!,
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.bodyLarge),
+                      const SizedBox(height: AppSpacing.md),
+                      ElevatedButton(
+                          onPressed: _load, child: const Text('Réessayer')),
+                    ],
+                  ),
+                ),
               ),
             )
           else if (visible.isEmpty)

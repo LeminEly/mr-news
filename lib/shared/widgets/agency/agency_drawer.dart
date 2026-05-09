@@ -201,7 +201,7 @@ class _StatusBadge extends StatelessWidget {
     final s = status;
     final label = () {
       switch (s) {
-        case AgencyStatus.approved:
+        case AgencyStatus.accepted:
           return '✅ Approuvée';
         case AgencyStatus.pending:
           return '⏳ En attente';
@@ -216,7 +216,7 @@ class _StatusBadge extends StatelessWidget {
 
     final (bg, fg, border) = () {
       switch (s) {
-        case AgencyStatus.approved:
+        case AgencyStatus.accepted:
           return (AppColors.successLight, AppColors.success, AppColors.success);
         case AgencyStatus.pending:
           return (AppColors.warningLight, AppColors.warning, AppColors.warning);

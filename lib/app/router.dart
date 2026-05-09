@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../shared/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/feed/providers/feed_providers.dart';
 
@@ -15,35 +16,41 @@ import '../shared/models/agency_model.dart';
 import '../features/admin/ui/stats_dashboard.dart';
 import '../features/admin/ui/agency_validation.dart';
 import '../features/admin/ui/reports_management.dart';
-import '../features/admin/ui/categories_management.dart';
+import '../features/admin/ui/category_analytics_screen.dart';
+import '../features/admin/ui/categories_crud_screen.dart';
 import '../features/admin/ui/agencies_list.dart';
 import '../features/admin/ui/users_management.dart';
 import '../features/admin/ui/admin_login_screen.dart';
+import '../features/admin/ui/agency_details_screen.dart';
+import '../features/admin/ui/articles_management.dart';
 import '../features/agency/ui/agency_dashboard_screen.dart';
 import '../features/webview/ui/article_webview_screen.dart';
 import '../features/auth/ui/unified_auth_screen.dart';
 import '../features/auth/ui/auth_home_screen.dart';
 
 class AppRoutes {
-  static const String splash          = '/splash';
-  static const String authHome        = '/';
-  static const String onboarding      = '/onboarding';
-  static const String feed            = '/feed';
-  static const String articleWebView  = '/article';
-  static const String agencyRegister  = '/agency/register';
-  static const String agencyLogin     = '/agency/login';
-  static const String agencyPending   = '/agency/pending';
+  static const String splash = '/splash';
+  static const String authHome = '/';
+  static const String onboarding = '/onboarding';
+  static const String feed = '/feed';
+  static const String articleWebView = '/article';
+  static const String agencyRegister = '/agency/register';
+  static const String agencyLogin = '/agency/login';
+  static const String agencyPending = '/agency/pending';
   static const String agencyDashboard = '/agency/dashboard';
-  static const String agencyPublish   = '/agency/publish';
+  static const String agencyPublish = '/agency/publish';
   static const String agencyEditArticle = '/agency/edit';
-  static const String agencyProfile   = '/agency/profile';
-  static const String adminDashboard  = '/admin';
+  static const String agencyProfile = '/agency/profile';
+  static const String adminDashboard = '/admin';
   static const String adminValidation = '/admin/validation';
-  static const String adminReports    = '/admin/reports';
+  static const String adminReports = '/admin/reports';
   static const String adminCategories = '/admin/categories';
-  static const String adminAgencies   = '/admin/agencies';
-  static const String adminUsers      = '/admin/users';
-  static const String adminLogin      = '/admin/login';
+  static const String adminCategoryAnalytics = '/admin/category-analytics';
+  static const String adminAgencies = '/admin/agencies';
+  static const String adminUsers = '/admin/users';
+  static const String adminArticles = '/admin/articles';
+  static const String adminLogin = '/admin/login';
+  static const String adminAgencyDetails = '/admin/agency-details';
 }
 
 // Global flag to allow test admin login without Supabase backend dependency
@@ -62,37 +69,50 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isAuthenticated = user != null;
       final loc = state.matchedLocation;
 
-      // Splash & AuthHome -> laisse passer
-      if (loc == AppRoutes.splash || loc == AppRoutes.authHome) return null;
+      // Splash
+      if (loc == AppRoutes.splash) return null;
 
-      // Routes publiques 
+      // Automatic redirection from AuthHome or login pages if already authenticated
+      if ((loc == AppRoutes.authHome ||
+              loc == '/' ||
+              loc == AppRoutes.adminLogin ||
+              loc == AppRoutes.agencyLogin) &&
+          isAuthenticated) {
+        if (role == 'admin') return AppRoutes.adminDashboard;
+        if (role == 'agency') return AppRoutes.agencyDashboard;
+        return AppRoutes.feed; // Default for readers
+      }
+
+      // Allow access to public routes
       final publicRoutes = [
+        AppRoutes.authHome,
         AppRoutes.onboarding,
         AppRoutes.feed,
         AppRoutes.articleWebView,
         AppRoutes.agencyRegister,
         AppRoutes.agencyLogin,
         AppRoutes.adminLogin,
+        '/auth-unified',
       ];
-      if (publicRoutes.any((r) => loc.startsWith(r))) return null;
+      if (publicRoutes.any((r) => loc == r)) return null;
 
       // Bypass test for Admin
       if (bypassAdminAuth && loc.startsWith('/admin')) return null;
 
-      // Protection globale : si non auth -> AuthHome
+      // Global protection: if not authenticated and trying to access protected route
       if (!isAuthenticated) return AppRoutes.authHome;
 
-      // Routes agence — doit etre auth + role agency
+      // Agency routes protection
       if (loc.startsWith('/agency')) {
-        if (role != 'agency' && role != 'admin') return AppRoutes.feed;
-        // Le check du statut "pending" est fait dans la "Gate" du dashboard
-        return null;
+        // Allow if role is agency or admin
+        if (role == 'agency' || role == 'admin') return null;
+        return AppRoutes.feed;
       }
 
-      // Routes admin — doit etre auth + role admin
+      // Admin routes protection
       if (loc.startsWith('/admin')) {
-        if (role != 'admin') return AppRoutes.feed;
-        return null;
+        if (role == 'admin') return null;
+        return AppRoutes.feed;
       }
 
       return null;
@@ -139,7 +159,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'article',
         builder: (context, state) {
           final extra = state.extra as Map<String, String>;
-          return ArticleWebViewScreen(url: extra['url']!, title: extra['title']!);
+          return ArticleWebViewScreen(
+              url: extra['url']!, title: extra['title']!);
         },
       ),
 
@@ -218,11 +239,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ReportsManagementScreen(),
       ),
 
-      // Admin : Catégories
+      // Admin : Catégories (CRUD)
       GoRoute(
         path: AppRoutes.adminCategories,
         name: 'admin-categories',
-        builder: (context, state) => const CategoriesManagementScreen(),
+        builder: (context, state) => const CategoriesCrudScreen(),
+      ),
+      
+      // Admin : Analytiques des catégories
+      GoRoute(
+        path: AppRoutes.adminCategoryAnalytics,
+        name: 'admin-category-analytics',
+        builder: (context, state) => const CategoryAnalyticsScreen(),
       ),
 
       // Admin : Agences
@@ -231,12 +259,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'admin-agencies',
         builder: (context, state) => const AgenciesListScreen(),
       ),
- 
+
       // Admin : Users
       GoRoute(
         path: AppRoutes.adminUsers,
         name: 'admin-users',
         builder: (context, state) => const UsersManagementScreen(),
+      ),
+
+      // Admin : Articles
+      GoRoute(
+        path: AppRoutes.adminArticles,
+        name: 'admin-articles',
+        builder: (context, state) => const ArticlesManagementScreen(),
       ),
 
       // Admin : Login
@@ -245,8 +280,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'admin-login',
         builder: (context, state) => const AdminLoginScreen(),
       ),
-    ],
 
+      // Admin : Détails Agence
+      GoRoute(
+        path: AppRoutes.adminAgencyDetails,
+        name: 'admin-agency-details',
+        builder: (context, state) {
+          final agency = state.extra as AgencyModel;
+          return AgencyDetailsScreen(agency: agency);
+        },
+      ),
+    ],
     errorBuilder: (context, state) => Scaffold(
       body: Center(
         child: Text('Page non trouvée: ${state.error}'),
@@ -292,16 +336,32 @@ class AgencyDashboardGate extends ConsumerWidget {
         if (agency.status == AgencyStatus.pending) {
           return const AgencyPendingScreen();
         }
+
+        if (agency.status == AgencyStatus.rejected) {
+          // TODO: Créer un écran spécifique pour les agences refusées
+          return const AgencyPendingScreen();
+        }
+
         return AgencyDashboardScreen(agency: agency);
       },
       loading: () => const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      ),
-      error: (err, stack) => Scaffold(
         body: Center(
-          child: Text('Erreur: $err'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: AppSpacing.md),
+              Text('Chargement de votre espace...'),
+            ],
+          ),
         ),
       ),
+      error: (err, stack) {
+        debugPrint('AgencyDashboardGate Error: $err\n$stack');
+        // Si le profil n'est pas trouvé ou s'il y a une erreur, on affiche l'écran d'attente
+        // plutôt que l'écran d'erreur de connexion, pour une meilleure UX.
+        return const AgencyPendingScreen();
+      },
     );
   }
 }

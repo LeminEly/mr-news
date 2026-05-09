@@ -1,8 +1,8 @@
 import 'dart:typed_data';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
@@ -11,6 +11,7 @@ import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
 
 import 'package:go_router/go_router.dart';
 import 'package:mauritanie_news/app/router.dart';
+import 'package:mauritanie_news/shared/models/agency_model.dart';
 
 class AgencyRegisterScreen extends StatefulWidget {
   const AgencyRegisterScreen({super.key});
@@ -32,9 +33,13 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
   bool _isLoading = false;
   String? _errorMessage;
 
-  String _mediaType = 'news_agency';
+  MediaType _mediaType = MediaType.newsAgency;
   Uint8List? _logoBytes;
   String? _logoFileExt;
+
+  Uint8List? _docBytes;
+  String? _docFileName;
+  String? _docFileExt;
 
   @override
   void dispose() {
@@ -113,6 +118,35 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
     });
   }
 
+  Future<void> _pickDocument() async {
+    try {
+      final result = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png'],
+        withData: true,
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = result.files.first;
+      setState(() {
+        _docBytes = file.bytes;
+        _docFileName = file.name;
+        _docFileExt = file.extension?.toLowerCase();
+      });
+    } catch (e) {
+      debugPrint('Error picking document: $e');
+    }
+  }
+
+  void _clearDocument() {
+    setState(() {
+      _docBytes = null;
+      _docFileName = null;
+      _docFileExt = null;
+    });
+  }
+
   double _strength() {
     final len = _passwordController.text.length;
     if (len <= 5) return 0.25;
@@ -163,7 +197,6 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
-    final messenger = ScaffoldMessenger.of(context);
 
     try {
       final supabase = Supabase.instance.client;
@@ -177,6 +210,8 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
         mediaType: _mediaType,
         logoBytes: _logoBytes,
         logoFileExt: _logoFileExt,
+        documentBytes: _docBytes,
+        documentFileExt: _docFileExt,
       );
 
       await authService.login(
@@ -185,19 +220,42 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
       );
 
       if (!mounted) return;
-      context.go(AppRoutes.agencyDashboard);
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _errorMessage = e.toString());
-      messenger.showSnackBar(
-        SnackBar(
-          backgroundColor: AppColors.error,
-          content: Text(
-            'Inscription impossible',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
+      
+      await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: AppColors.success),
+              SizedBox(width: AppSpacing.sm),
+              Text('Demande envoyée'),
+            ],
           ),
+          content: const Text(
+            'Votre demande a été envoyée avec succès. Veuillez attendre la validation de l\'administrateur avant de pouvoir publier vos articles.',
+            style: AppTextStyles.bodyMedium,
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Compris'),
+            ),
+          ],
         ),
       );
+
+      if (!mounted) return;
+      context.go(AppRoutes.agencyPending);
+    } catch (e) {
+      if (!mounted) return;
+      // Handle the error message nicely
+      final msg = e.toString().replaceFirst('Exception: ', '');
+      setState(() => _errorMessage = msg);
+      
+      // We don't show the snackbar if we are showing the error box on screen
+      // but if the error is "None", we might want a generic one.
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -270,19 +328,19 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                 validator: _validateWebsite,
               ),
               const SizedBox(height: AppSpacing.lg),
-              DropdownButtonFormField<String>(
+              DropdownButtonFormField<MediaType>(
                 initialValue: _mediaType,
                 decoration: _decoration(
                   label: 'Type de média',
                   icon: Icons.category_outlined,
                 ),
                 items: const [
-                  DropdownMenuItem(value: 'news_agency', child: Text('📡 Agence de presse')),
-                  DropdownMenuItem(value: 'newspaper', child: Text('📰 Presse écrite')),
-                  DropdownMenuItem(value: 'blog', child: Text('✍️ Blog')),
-                  DropdownMenuItem(value: 'tv_channel', child: Text('📺 Télévision')),
-                  DropdownMenuItem(value: 'radio', child: Text('📻 Radio')),
-                  DropdownMenuItem(value: 'other', child: Text('📌 Autre')),
+                  DropdownMenuItem(value: MediaType.newsAgency, child: Text('📡 Agence de presse')),
+                  DropdownMenuItem(value: MediaType.newspaper, child: Text('📰 Presse écrite')),
+                  DropdownMenuItem(value: MediaType.blog, child: Text('✍️ Blog')),
+                  DropdownMenuItem(value: MediaType.tvChannel, child: Text('📺 Télévision')),
+                  DropdownMenuItem(value: MediaType.radio, child: Text('📻 Radio')),
+                  DropdownMenuItem(value: MediaType.other, child: Text('📌 Autre')),
                 ],
                 onChanged: (v) {
                   if (v == null) return;
@@ -336,6 +394,39 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                   ),
                 ),
               ],
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Document justificatif (PDF ou Image) *',
+                style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: _isLoading ? null : _pickDocument,
+                      icon: const Icon(Icons.upload_file, color: AppColors.primary),
+                      label: Text(
+                        _docFileName ?? 'Choisir un document',
+                        style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: AppColors.primary),
+                        shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+                      ),
+                    ),
+                  ),
+                  if (_docBytes != null) ...[
+                    const SizedBox(width: AppSpacing.md),
+                    IconButton(
+                      onPressed: _clearDocument,
+                      icon: const Icon(Icons.close, color: AppColors.error),
+                      tooltip: 'Retirer le document',
+                    ),
+                  ],
+                ],
+              ),
               const SizedBox(height: AppSpacing.xl),
               const Divider(color: AppColors.border),
               const SizedBox(height: AppSpacing.xl),

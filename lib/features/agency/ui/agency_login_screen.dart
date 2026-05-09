@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
 import 'package:mauritanie_news/app/router.dart';
+import 'package:mauritanie_news/shared/models/agency_model.dart';
 
 class AgencyLoginScreen extends StatefulWidget {
   const AgencyLoginScreen({super.key});
@@ -68,24 +69,50 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
     try {
       final supabase = Supabase.instance.client;
       final authService = AgencyAuthService(supabase);
-      await authService.login(
+      
+      final agency = await authService.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
-      // TODO: Activer la vérification du statut quand l'admin sera prêt
-      // Pour l'instant, tous les comptes connectés accèdent au dashboard
+      if (agency == null) {
+        throw 'Profil agence introuvable';
+      }
+
+      // Check status
+      if (agency.status == AgencyStatus.rejected) {
+        await supabase.auth.signOut();
+        throw 'Votre compte a été refusé par l\'administration.';
+      } else if (agency.status == AgencyStatus.suspended) {
+        await supabase.auth.signOut();
+        throw 'Votre compte est suspendu.';
+      }
 
       if (!mounted) return;
+      
+      // If accepted or pending, we go to dashboard. 
+      // The AgencyDashboardGate in router.dart will show the appropriate screen.
       context.go(AppRoutes.agencyDashboard);
+      
+      messenger.showSnackBar(
+        const SnackBar(
+          backgroundColor: AppColors.success,
+          content: Text('Connexion réussie'),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
-      setState(() => _errorMessage = e.toString());
+      String errorMsg = e.toString();
+      if (errorMsg.contains('Exception:')) {
+        errorMsg = errorMsg.split('Exception:').last.trim();
+      }
+      
+      setState(() => _errorMessage = errorMsg);
       messenger.showSnackBar(
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Connexion impossible',
+            errorMsg,
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),

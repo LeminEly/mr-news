@@ -210,7 +210,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
                                         ? Icon(
                                             Icons.business_rounded,
                                             size: 56,
-                                            color: AppColors.primary.withValues(alpha: 0.85),
+                                            color: AppColors.primary.withOpacity(0.85),
                                           )
                                         : CachedNetworkImage(
                                             imageUrl: _agency!.logoUrl!.trim(),
@@ -229,7 +229,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
                                             errorWidget: (_, __, ___) => Icon(
                                               Icons.business_rounded,
                                               size: 56,
-                                              color: AppColors.primary.withValues(alpha: 0.85),
+                                              color: AppColors.primary.withOpacity(0.85),
                                             ),
                                           ),
                                   ),

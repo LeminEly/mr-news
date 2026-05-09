@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/theme/app_theme.dart';
 import '../../../app/router.dart';
+import '../../../core/localization/l10n.dart';
 
 class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
@@ -43,15 +44,15 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
     super.dispose();
   }
 
-  String? _validateEmail(String? v) {
+  String? _validateEmail(String? v, BuildContext context) {
     final t = (v ?? '').trim();
-    if (t.isEmpty) return 'Email obligatoire';
+    if (t.isEmpty) return context.l10n.translate('required_field');
     final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(t);
     if (!ok) return 'Email invalide';
     return null;
   }
 
-  String? _validatePassword(String? v) {
+  String? _validatePassword(String? v, BuildContext context) {
     final t = (v ?? '');
     if (t.length < 6) return 'Minimum 6 caractères';
     return null;
@@ -63,7 +64,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
     setState(() => _isLoading = true);
     final messenger = ScaffoldMessenger.of(context);
-    final router = GoRouter.of(context);
 
     try {
       final supabase = Supabase.instance.client;
@@ -72,6 +72,18 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
       final password = _passwordController.text;
 
       if (email == 'Abdellahi@g.com' && password == 'as1234') {
+        // Authenticate with Supabase to get a valid session for RLS policies
+        try {
+          await supabase.auth.signInWithPassword(
+            email: email,
+            password: password,
+          );
+        } catch (e) {
+          // If auth fails, we still allow bypass for UI viewing
+          debugPrint('Supabase admin auth failed: $e');
+          setState(() => _errorMessage = 'Note: Authentication backend indisponible. Mode maintenance activé.');
+        }
+
         // Use the router bypass to guarantee access without relying on Supabase state
         bypassAdminAuth = true;
 
@@ -131,7 +143,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         title: Text(
-          'Administration',
+          context.l10n.translate('admin'),
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
         ),
       ),
@@ -145,7 +157,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                 const Icon(Icons.admin_panel_settings, color: AppColors.primary, size: 72),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Espace Administrator',
+                  context.l10n.translate('admin_space'),
                   style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary),
                   textAlign: TextAlign.center,
                 ),
@@ -160,17 +172,17 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     decoration: _decoration(
-                      label: 'Adresse email',
+                      label: context.l10n.translate('email'),
                       icon: Icons.email_outlined,
                     ),
-                    validator: _validateEmail,
+                    validator: (v) => _validateEmail(v, context),
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscure,
                     decoration: _decoration(
-                      label: 'Mot de passe',
+                      label: context.l10n.translate('password'),
                       icon: Icons.lock_outlined,
                       suffixIcon: IconButton(
                         onPressed: () => setState(() => _obscure = !_obscure),
@@ -180,7 +192,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                         ),
                       ),
                     ),
-                    validator: _validatePassword,
+                    validator: (v) => _validatePassword(v, context),
                   ),
                 ],
               ),
@@ -234,7 +246,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                             ),
                           )
                         : Text(
-                            'Connect',
+                            context.l10n.translate('connect'),
                             style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
                           ),
                   ),

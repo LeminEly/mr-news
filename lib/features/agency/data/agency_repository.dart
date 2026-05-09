@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../shared/models/article_model.dart';
 import '../../../shared/models/agency_model.dart';
 import '../../../shared/models/category_model.dart';
+import '../../../core/constants/env.dart';
 
 class AgencyRepositoryException implements Exception {
   const AgencyRepositoryException({
@@ -124,10 +125,23 @@ class AgencyRepository {
           .from('agencies')
           .select()
           .eq('auth_user_id', user.id)
-          .single();
+          .maybeSingle();
+      
+      if (data == null) {
+        debugPrint('Agency profile not found for user ${user.id}');
+        throw const AgencyRepositoryException(
+          code: 'NOT_FOUND',
+          message: 'Profil agence introuvable. Votre compte est peut-être en cours de création.',
+        );
+      }
+      
       return AgencyModel.fromSupabase(data);
     } on PostgrestException catch (error) {
+      debugPrint('PostgrestException in getCurrentAgency: ${error.message}');
       throw _mapPostgrestError(error);
+    } catch (e) {
+      debugPrint('Unexpected error in getCurrentAgency: $e');
+      rethrow;
     }
   }
 

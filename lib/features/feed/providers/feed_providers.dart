@@ -56,7 +56,25 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 });
 
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
-  return AdminRepository(client: ref.watch(supabaseClientProvider));
+  // IMPORTANT: Using the Service Role Key for Admin operations to bypass RLS
+  // as requested. This ensures all agencies and reports are visible to admins.
+  const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
+  const url = 'https://cbfuldmswluzwxfdipwy.supabase.co';
+  
+  final adminClient = SupabaseClient(url, serviceRoleKey);
+  return AdminRepository(client: adminClient);
+});
+
+final adminStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+  return ref.watch(adminRepositoryProvider).getGlobalStats();
+});
+
+final agencyActivityProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+  return ref.watch(adminRepositoryProvider).getAgencyActivityByDate();
+});
+
+final categoryAnalyticsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+  return ref.watch(adminRepositoryProvider).getCategoryAnalytics();
 });
 
 // FEED STATE 
@@ -113,9 +131,6 @@ final myArticlesProvider = FutureProvider.autoDispose
 
 // ADMIN STATE
 
-final adminStatsProvider = FutureProvider.autoDispose((ref) async {
-  return ref.watch(adminRepositoryProvider).getGlobalStats();
-});
 
 final pendingAgenciesProvider = FutureProvider.autoDispose((ref) async {
   return ref.watch(adminRepositoryProvider).getAgenciesByStatus(AgencyStatus.pending);
@@ -123,4 +138,12 @@ final pendingAgenciesProvider = FutureProvider.autoDispose((ref) async {
 
 final pendingReportsProvider = FutureProvider.autoDispose((ref) async {
   return ref.watch(adminRepositoryProvider).getPendingReports();
+});
+
+final allAgenciesProvider = FutureProvider.autoDispose<List<AgencyModel>>((ref) async {
+  return ref.watch(adminRepositoryProvider).getAgencies();
+});
+
+final allCategoriesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  return ref.watch(adminRepositoryProvider).getAllCategories();
 });

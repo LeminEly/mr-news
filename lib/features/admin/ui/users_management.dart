@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/theme/app_theme.dart';
-import '../../../shared/models/agency_model.dart';
 import 'admin_drawer.dart';
-import 'agencies_list.dart';
+import '../../feed/providers/feed_providers.dart';
 
 /// Écran de gestion des utilisateurs et des rôles (Admin).
 class UsersManagementScreen extends ConsumerStatefulWidget {
@@ -75,9 +74,33 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
           Expanded(
             child: agenciesAsync.when(
               data: (agencies) {
-                final filtered = agencies.where((AgencyModel a) {
-                  return a.name.toLowerCase().contains(_searchQuery) ||
-                      a.email.toLowerCase().contains(_searchQuery);
+                // Créer une liste d'objets "User" pour l'affichage
+                final List<Map<String, dynamic>> allUsers = [];
+                
+                // Ajouter l'admin par défaut (hardcoded car pas de table users)
+                allUsers.add({
+                  'name': 'Abdellahi Admin',
+                  'email': 'Abdellahi@g.com',
+                  'role': 'ADMIN',
+                  'created_at': DateTime(2024, 1, 1),
+                  'id': 'admin-1',
+                });
+
+                // Ajouter les agences
+                for (final agency in agencies) {
+                  allUsers.add({
+                    'name': agency.name,
+                    'email': agency.email,
+                    'role': 'AGENCY',
+                    'created_at': agency.createdAt,
+                    'id': agency.id,
+                  });
+                }
+
+                final filtered = allUsers.where((u) {
+                  final name = u['name'].toString().toLowerCase();
+                  final email = u['email'].toString().toLowerCase();
+                  return name.contains(_searchQuery) || email.contains(_searchQuery);
                 }).toList();
 
                 if (filtered.isEmpty) {
@@ -101,55 +124,71 @@ class _UsersManagementScreenState extends ConsumerState<UsersManagementScreen> {
                   itemCount: filtered.length,
                   separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
                   itemBuilder: (context, index) {
-                    final agency = filtered[index];
-                    final dateStr = DateFormat('d MMM yyyy', 'fr_FR').format(agency.createdAt);
+                    final user = filtered[index];
+                    final createdAt = user['created_at'] as DateTime;
+                    String dateStr;
+                    try {
+                      dateStr = DateFormat('d MMM yyyy').format(createdAt);
+                    } catch (e) {
+                      dateStr = createdAt.toString().split(' ')[0];
+                    }
 
                     return Container(
                       decoration: BoxDecoration(
                         color: AppColors.surface,
                         borderRadius: AppRadius.cardRadius,
                         border: Border.all(color: AppColors.border),
-                        boxShadow: AppShadows.card,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.05),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
                       child: ListTile(
                         contentPadding: const EdgeInsets.all(AppSpacing.md),
                         leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                          backgroundColor: (user['role'] == 'ADMIN' ? AppColors.textPrimary : AppColors.primary).withOpacity(0.1),
                           child: Text(
-                            agency.name.substring(0, 1).toUpperCase(),
-                            style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
+                            user['name'].toString().substring(0, 1).toUpperCase(),
+                            style: AppTextStyles.labelLarge.copyWith(
+                              color: user['role'] == 'ADMIN' ? AppColors.textPrimary : AppColors.primary,
+                            ),
                           ),
                         ),
                         title: Row(
                           children: [
                             Expanded(
                               child: Text(
-                                agency.name,
+                                user['name'],
                                 style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.bold),
                               ),
                             ),
-                            _RoleChip(role: agency.mediaType.name),
+                            _RoleChip(role: user['role']),
                           ],
                         ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const SizedBox(height: AppSpacing.xs),
-                            Text(agency.email, style: AppTextStyles.bodySmall),
+                            Text(user['email'], style: AppTextStyles.bodySmall),
                             const SizedBox(height: AppSpacing.xs),
                             Text('Created: $dateStr', style: AppTextStyles.meta),
                           ],
                         ),
-                        onTap: () {
-                          // TODO: Détails de l'utilisateur ou édition du rôle
-                        },
                       ),
                     );
                   },
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (err, __) => Center(child: Text('Error: $err')),
+              error: (err, __) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text('Error: $err', textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)),
+                ),
+              ),
             ),
           ),
         ],
@@ -167,9 +206,9 @@ class _RoleChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.1),
+        color: AppColors.secondary.withOpacity(0.1),
         borderRadius: AppRadius.chipRadius,
-        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.3)),
+        border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
       ),
       child: Text(
         role.toUpperCase(),

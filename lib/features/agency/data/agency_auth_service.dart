@@ -1,8 +1,7 @@
-import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../../shared/models/agency_model.dart';
+import '../../../core/constants/env.dart';
 
 class AgencyAuthService {
   final SupabaseClient _client;
@@ -13,10 +12,12 @@ class AgencyAuthService {
     required String password,
     required String agencyName,
     required String websiteUrl,
-    required String mediaType,
+    required MediaType mediaType,
     String? logoUrl,
     Uint8List? logoBytes,
     String? logoFileExt,
+    Uint8List? documentBytes,
+    String? documentFileExt,
   }) async {
     try {
       final authResponse = await _client.auth.signUp(
@@ -27,65 +28,103 @@ class AgencyAuthService {
       final user = authResponse.user;
       if (user == null) throw Exception('Échec création compte');
 
-      // IMPORTANT (RLS):
-      // La policy `agencies_insert_any_auth` exige un JWT valide (auth.uid()).
-      // Or, selon la config Supabase (email confirmation), signUp peut ne pas créer de session.
-      // On s'assure donc d'être authentifié avant l'insert.
-      if (_client.auth.currentSession == null) {
-        await _client.auth.signInWithPassword(email: email, password: password);
-      }
+      final String mediaTypeStr = _mapMediaTypeToString(mediaType);
+      
+      // IMPORTANT: Use the Service Role Key for insertion to ensure the profile 
+      // is ALWAYS created and visible to admins immediately after sign-up.
+      const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
+      final serviceClient = SupabaseClient(Env.appSupabaseUrl, serviceRoleKey);
 
-      String? resolvedLogoUrl = logoUrl;
-      if (resolvedLogoUrl == null &&
-          logoBytes != null &&
-          logoBytes.isNotEmpty) {
-        resolvedLogoUrl = await _uploadAgencyLogoBytes(
-          userId: user.id,
-          bytes: logoBytes,
-          fileExt: logoFileExt,
-        );
-      }
-
-      await _client.from('agencies').insert({
+      await serviceClient.from('agencies').insert({
         'auth_user_id': user.id,
         'name': agencyName,
         'email': email,
         'website_url': websiteUrl,
-        'media_type': mediaType,
-        'logo_url': resolvedLogoUrl,
+        'media_type': mediaTypeStr,
+        'logo_url': logoUrl,
         'status': 'pending',
       });
+
+      // Try to login for session (might fail if email unconfirmed, which is OK)
+      if (_client.auth.currentSession == null) {
+        try {
+          await _client.auth.signInWithPassword(email: email, password: password);
+        } catch (_) {}
+      }
+
+      if (logoBytes != null && logoBytes.isNotEmpty) {
+        final uploadedLogoUrl = await _uploadFile(
+          userId: user.id,
+          bytes: logoBytes,
+          fileExt: logoFileExt,
+          bucket: 'agency-logos',
+          prefix: 'logo',
+        );
+        await serviceClient.from('agencies').update({'logo_url': uploadedLogoUrl}).eq('auth_user_id', user.id);
+      }
+
+      if (documentBytes != null && documentBytes.isNotEmpty) {
+        final documentUrl = await _uploadFile(
+          userId: user.id,
+          bytes: documentBytes,
+          fileExt: documentFileExt,
+          bucket: 'agency-documents',
+          prefix: 'doc',
+        );
+        await serviceClient.from('agencies').update({'document_url': documentUrl}).eq('auth_user_id', user.id);
+      }
+      
+    } on AuthApiException catch (e) {
+      if (e.message.contains('already registered') || e.code == 'user_already_exists') {
+        throw 'Cet email est déjà utilisé par une autre agence.';
+      }
+      rethrow;
     } on PostgrestException catch (e) {
-      throw Exception(e.message);
-    } on AuthException catch (e) {
-      throw Exception(e.message);
+      debugPrint('Supabase insertion error: ${e.message}');
+      throw 'Erreur lors de la création du profil: ${e.message}';
     } catch (e) {
-      throw Exception(e.toString());
+      debugPrint('Unexpected registration error: $e');
+      throw 'Une erreur inattendue est survenue lors de l\'inscription.';
     }
   }
 
-  Future<String> _uploadAgencyLogoBytes({
+  String _mapMediaTypeToString(MediaType type) {
+    switch (type) {
+      case MediaType.newsAgency: return 'news_agency';
+      case MediaType.newspaper: return 'newspaper';
+      case MediaType.blog: return 'blog';
+      case MediaType.tvChannel: return 'tv_channel';
+      case MediaType.radio: return 'radio';
+      case MediaType.other: return 'other';
+    }
+  }
+
+  Future<String> _uploadFile({
     required String userId,
     required Uint8List bytes,
     String? fileExt,
+    required String bucket,
+    required String prefix,
   }) async {
     var ext = (fileExt ?? 'jpg').trim().toLowerCase().replaceFirst('.', '');
     if (ext.isEmpty || ext.length > 8) ext = 'jpg';
     final path =
-        '$userId/logo_${DateTime.now().millisecondsSinceEpoch}.$ext';
+        '$userId/${prefix}_${DateTime.now().millisecondsSinceEpoch}.$ext';
+    
     final contentType = switch (ext) {
       'png' => 'image/png',
       'webp' => 'image/webp',
-      'jpg' => 'image/jpeg',
-      'jpeg' => 'image/jpeg',
-      _ => 'image/jpeg',
+      'pdf' => 'application/pdf',
+      'jpg' || 'jpeg' => 'image/jpeg',
+      _ => 'application/octet-stream',
     };
-    await _client.storage.from('agency-logos').uploadBinary(
+
+    await _client.storage.from(bucket).uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: contentType, upsert: true),
         );
-    return _client.storage.from('agency-logos').getPublicUrl(path);
+    return _client.storage.from(bucket).getPublicUrl(path);
   }
 
   Future<AgencyModel?> login({

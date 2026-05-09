@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../shared/theme/app_theme.dart';
 import '../../../app/router.dart';
+import '../../../core/localization/l10n.dart';
 
 class AuthHomeScreen extends StatelessWidget {
   const AuthHomeScreen({super.key});
@@ -16,18 +17,21 @@ class AuthHomeScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: AppSpacing.xxl),
-              // Header
+              const Align(
+                alignment: Alignment.topLeft,
+                child: LanguageSwitcher(),
+              ),
+              const SizedBox(height: AppSpacing.md),
               const Icon(Icons.newspaper, color: AppColors.primary, size: 80),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Mr-News',
+                context.l10n.translate('app_title'),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Portail de Gestion',
+                context.l10n.translate('management_portal'),
                 textAlign: TextAlign.center,
                 style: AppTextStyles.bodyLarge.copyWith(color: AppColors.textSecondary),
               ),
@@ -35,9 +39,9 @@ class AuthHomeScreen extends StatelessWidget {
 
               // Agency Card
               _RoleCard(
-                title: 'Espace Agence',
+                title: context.l10n.translate('agency_space'),
                 icon: Icons.business_outlined,
-                description: 'Inscrivez votre agence de presse ou connectez-vous pour publier vos articles.',
+                description: context.l10n.translate('agency_desc'),
                 actions: [
                   ElevatedButton(
                     onPressed: () => context.push(AppRoutes.agencyRegister),
@@ -45,12 +49,12 @@ class AuthHomeScreen extends StatelessWidget {
                       backgroundColor: AppColors.primary,
                       foregroundColor: AppColors.textOnPrimary,
                     ),
-                    child: const Text('S\'inscrire (Sign Up)'),
+                    child: Text(context.l10n.translate('signup')),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   OutlinedButton(
                     onPressed: () => context.push(AppRoutes.agencyLogin),
-                    child: const Text('Se connecter (Sign In)'),
+                    child: Text(context.l10n.translate('signin')),
                   ),
                 ],
               ),
@@ -59,9 +63,9 @@ class AuthHomeScreen extends StatelessWidget {
 
               // Admin Card
               _RoleCard(
-                title: 'Administration',
+                title: context.l10n.translate('admin'),
                 icon: Icons.admin_panel_settings_outlined,
-                description: 'Accès réservé aux administrateurs pour la modération et la gestion du système.',
+                description: context.l10n.translate('admin_desc'),
                 actions: [
                   ElevatedButton(
                     onPressed: () => context.push(AppRoutes.adminLogin),
@@ -69,7 +73,7 @@ class AuthHomeScreen extends StatelessWidget {
                       backgroundColor: AppColors.textPrimary,
                       foregroundColor: AppColors.surface,
                     ),
-                    child: const Text('Sign Admin'),
+                    child: Text(context.l10n.translate('sign_admin')),
                   ),
                 ],
               ),
@@ -113,7 +117,7 @@ class _RoleCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(AppSpacing.sm),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: AppColors.primary.withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(icon, color: AppColors.primary, size: 32),

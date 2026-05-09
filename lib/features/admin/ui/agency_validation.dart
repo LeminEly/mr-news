@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/theme/app_theme.dart';
+import '../../../shared/models/agency_model.dart';
 import '../../feed/providers/feed_providers.dart';
 import 'admin_drawer.dart';
 
@@ -66,7 +67,7 @@ class AgencyValidationScreen extends ConsumerWidget {
 class _AgencyCard extends ConsumerStatefulWidget {
   const _AgencyCard({required this.agency});
 
-  final dynamic agency;
+  final AgencyModel agency;
 
   @override
   ConsumerState<_AgencyCard> createState() => _AgencyCardState();
@@ -91,13 +92,14 @@ class _AgencyCardState extends ConsumerState<_AgencyCard> {
     try {
       if (approve) {
         await repo.approveAgency(agencyId);
-        messenger.showSnackBar(const SnackBar(content: Text('Agence approuvée')));
+        messenger.showSnackBar(const SnackBar(content: Text('Agence acceptée')));
       } else {
         await repo.rejectAgency(agencyId: agencyId, reason: reason!);
-        messenger.showSnackBar(const SnackBar(content: Text('Agence rejetée')));
+        messenger.showSnackBar(const SnackBar(content: Text('Agence refusée')));
       }
       ref.invalidate(pendingAgenciesProvider);
       ref.invalidate(adminStatsProvider);
+      ref.invalidate(allAgenciesProvider);
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text('Erreur: $e'), backgroundColor: AppColors.error));
     } finally {
@@ -147,8 +149,8 @@ class _AgencyCardState extends ConsumerState<_AgencyCard> {
             Row(
               children: [
                 CircleAvatar(
-                  backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                  child: const Icon(Icons.business, color: AppColors.primary),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: const Icon(Icons.lock_outline, color: AppColors.primary),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(

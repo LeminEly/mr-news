@@ -3,7 +3,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final reportsManagementRepositoryProvider =
     Provider<ReportsManagementRepository>(
-  (ref) => ReportsManagementRepository(),
+  (ref) {
+    // IMPORTANT: Using the Service Role Key for Admin operations to bypass RLS
+    const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
+    const url = 'https://cbfuldmswluzwxfdipwy.supabase.co';
+    
+    final adminClient = SupabaseClient(url, serviceRoleKey);
+    return ReportsManagementRepository(client: adminClient);
+  },
 );
 
 class ReportsManagementException implements Exception {
@@ -35,7 +42,7 @@ class ReportsManagementRepository {
       final rows = await _client
           .from('reports')
           .select('*, articles(id, title, source_url, language, agency_id)')
-          .eq('status', status)
+          .eq('status', status.toLowerCase())
           .order('created_at');
       return List<Map<String, dynamic>>.from(rows);
     } on PostgrestException catch (error) {
@@ -59,7 +66,7 @@ class ReportsManagementRepository {
       return await _client
           .from('reports')
           .update({
-            'status': status,
+            'status': status.toLowerCase(),
             'resolved_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', reportId)

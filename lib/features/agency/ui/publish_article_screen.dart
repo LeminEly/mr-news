@@ -515,7 +515,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                       return false;
                     }
 
-                    if (widget.agency.status != AgencyStatus.approved) {
+                    if (widget.agency.status != AgencyStatus.accepted) {
                       if (!mounted) return false;
                       messenger.showSnackBar(
                         SnackBar(

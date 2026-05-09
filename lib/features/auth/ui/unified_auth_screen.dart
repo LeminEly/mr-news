@@ -8,6 +8,7 @@ import '../../../shared/theme/app_theme.dart';
 import '../../../app/router.dart';
 import '../../agency/data/agency_auth_service.dart';
 import '../../feed/providers/feed_providers.dart';
+import '../../../core/localization/l10n.dart';
 
 class UnifiedAuthScreen extends ConsumerStatefulWidget {
   const UnifiedAuthScreen({super.key});
@@ -45,12 +46,12 @@ class _UnifiedAuthScreenState extends ConsumerState<UnifiedAuthScreen> with Sing
                 const Icon(Icons.newspaper, color: AppColors.primary, size: 64),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Mr-News Portal',
+                  context.l10n.translate('app_title'),
                   style: AppTextStyles.displayMedium.copyWith(color: AppColors.textPrimary),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  'Accès Administration & Agences',
+                  context.l10n.translate('portal_desc'),
                   style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 ),
               ],
@@ -75,9 +76,9 @@ class _UnifiedAuthScreenState extends ConsumerState<UnifiedAuthScreen> with Sing
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorSize: TabBarIndicatorSize.tab,
                   dividerColor: Colors.transparent,
-                  tabs: const [
-                    Tab(text: 'Admin'),
-                    Tab(text: 'Agence'),
+                  tabs: [
+                    Tab(text: context.l10n.translate('admin_tab')),
+                    Tab(text: context.l10n.translate('agency_tab')),
                   ],
                 ),
               ),
@@ -153,29 +154,29 @@ class _AdminLoginViewState extends ConsumerState<_AdminLoginView> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: AppSpacing.lg),
-            const Text(
-              'Connexion Administrateur',
+            Text(
+              context.l10n.translate('admin_login_title'),
               style: AppTextStyles.headlineSmall,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xxl),
             TextFormField(
               controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                prefixIcon: Icon(Icons.admin_panel_settings_outlined),
+              decoration: InputDecoration(
+                labelText: context.l10n.translate('email'),
+                prefixIcon: const Icon(Icons.admin_panel_settings_outlined),
               ),
-              validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+              validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
             ),
             const SizedBox(height: AppSpacing.md),
             TextFormField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Mot de passe',
-                prefixIcon: Icon(Icons.lock_outline),
+              decoration: InputDecoration(
+                labelText: context.l10n.translate('password'),
+                prefixIcon: const Icon(Icons.lock_outline),
               ),
-              validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+              validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
             ),
             const SizedBox(height: AppSpacing.xl),
             if (_errorMessage != null)
@@ -188,7 +189,7 @@ class _AdminLoginViewState extends ConsumerState<_AdminLoginView> {
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
               ),
-              child: _isLoading ? const CircularProgressIndicator() : const Text('Se connecter'),
+              child: _isLoading ? const CircularProgressIndicator() : Text(context.l10n.translate('connect')),
             ),
           ],
         ),
@@ -215,7 +216,7 @@ class _AgencyViewState extends State<_AgencyView> {
         children: [
           const SizedBox(height: AppSpacing.lg),
           Text(
-            _isLogin ? 'Espace Agence' : 'Inscription Agence',
+            _isLogin ? context.l10n.translate('agency_space') : context.l10n.translate('agency_signup_title'),
             style: AppTextStyles.headlineSmall,
             textAlign: TextAlign.center,
           ),
@@ -229,7 +230,7 @@ class _AgencyViewState extends State<_AgencyView> {
           const SizedBox(height: AppSpacing.lg),
           TextButton(
             onPressed: () => setState(() => _isLogin = !_isLogin),
-            child: Text(_isLogin ? "Pas de compte ? S'inscrire" : "Déjà un compte ? Se connecter"),
+            child: Text(_isLogin ? context.l10n.translate('no_account') : context.l10n.translate('already_account')),
           ),
         ],
       ),
@@ -268,10 +269,16 @@ class _AgencyLoginSectionState extends ConsumerState<_AgencyLoginSection> {
 
       if (!mounted) return;
       
-      if (agency?.status == AgencyStatus.approved) {
+      if (agency?.status == AgencyStatus.accepted || agency?.status == AgencyStatus.pending) {
         context.go(AppRoutes.agencyDashboard);
+      } else if (agency?.status == AgencyStatus.rejected) {
+        final error = context.l10n.translate('rejected_msg');
+        await supabase.auth.signOut();
+        throw error;
       } else {
-        context.go(AppRoutes.agencyPending);
+        final error = context.l10n.translate('unknown_status');
+        await supabase.auth.signOut();
+        throw error;
       }
     } catch (e) {
       setState(() => _errorMessage = e.toString());
@@ -288,15 +295,15 @@ class _AgencyLoginSectionState extends ConsumerState<_AgencyLoginSection> {
         children: [
           TextFormField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            decoration: InputDecoration(labelText: context.l10n.translate('email'), prefixIcon: const Icon(Icons.email_outlined)),
+            validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Mot de passe', prefixIcon: Icon(Icons.lock_outline)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            decoration: InputDecoration(labelText: context.l10n.translate('password'), prefixIcon: const Icon(Icons.lock_outline)),
+            validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
           const SizedBox(height: AppSpacing.xl),
           if (_errorMessage != null)
@@ -307,7 +314,7 @@ class _AgencyLoginSectionState extends ConsumerState<_AgencyLoginSection> {
           ElevatedButton(
             onPressed: _isLoading ? null : _login,
             style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-            child: _isLoading ? const CircularProgressIndicator() : const Text('Se connecter'),
+            child: _isLoading ? const CircularProgressIndicator() : Text(context.l10n.translate('connect')),
           ),
         ],
       ),
@@ -345,7 +352,7 @@ class _AgencySignUpSectionState extends ConsumerState<_AgencySignUpSection> {
         password: _passwordController.text,
         agencyName: _nameController.text.trim(),
         websiteUrl: '',
-        mediaType: 'other',
+        mediaType: MediaType.other,
       );
 
       if (!mounted) return;
@@ -365,21 +372,21 @@ class _AgencySignUpSectionState extends ConsumerState<_AgencySignUpSection> {
         children: [
           TextFormField(
             controller: _nameController,
-            decoration: const InputDecoration(labelText: "Nom de l'agence", prefixIcon: Icon(Icons.business_outlined)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            decoration: InputDecoration(labelText: context.l10n.translate('agency_name'), prefixIcon: const Icon(Icons.business_outlined)),
+            validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _emailController,
-            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            decoration: InputDecoration(labelText: context.l10n.translate('email'), prefixIcon: const Icon(Icons.email_outlined)),
+            validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
           const SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: _passwordController,
             obscureText: true,
-            decoration: const InputDecoration(labelText: 'Mot de passe', prefixIcon: Icon(Icons.lock_outline)),
-            validator: (v) => (v == null || v.isEmpty) ? 'Champ requis' : null,
+            decoration: InputDecoration(labelText: context.l10n.translate('password'), prefixIcon: const Icon(Icons.lock_outline)),
+            validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
           const SizedBox(height: AppSpacing.xl),
           if (_errorMessage != null)
@@ -390,7 +397,7 @@ class _AgencySignUpSectionState extends ConsumerState<_AgencySignUpSection> {
           ElevatedButton(
             onPressed: _isLoading ? null : _signUp,
             style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
-            child: _isLoading ? const CircularProgressIndicator() : const Text("S'inscrire"),
+            child: _isLoading ? const CircularProgressIndicator() : Text(context.l10n.translate('signup')),
           ),
         ],
       ),

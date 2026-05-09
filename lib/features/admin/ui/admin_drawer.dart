@@ -50,8 +50,8 @@ class AdminDrawer extends ConsumerWidget {
           _DrawerTile(
             icon: Icons.article_outlined,
             label: 'Articles',
-            isSelected: location.startsWith('/admin/articles'), // Placeholder
-            onTap: () {}, // Not implemented yet
+            isSelected: location == AppRoutes.adminArticles,
+            onTap: () => context.go(AppRoutes.adminArticles),
           ),
           _DrawerTile(
             icon: Icons.warning_amber_rounded,
@@ -61,9 +61,15 @@ class AdminDrawer extends ConsumerWidget {
           ),
           _DrawerTile(
             icon: Icons.category_outlined,
-            label: 'Categories',
+            label: 'Configuration Catégories',
             isSelected: location == AppRoutes.adminCategories,
             onTap: () => context.go(AppRoutes.adminCategories),
+          ),
+          _DrawerTile(
+            icon: Icons.analytics_outlined,
+            label: 'Analytiques',
+            isSelected: location == AppRoutes.adminCategoryAnalytics,
+            onTap: () => context.go(AppRoutes.adminCategoryAnalytics),
           ),
           _DrawerTile(
             icon: Icons.people_outline,
@@ -126,7 +132,7 @@ class _DrawerTile extends StatelessWidget {
         ),
       ),
       selected: isSelected,
-      selectedTileColor: AppColors.primary.withValues(alpha: 0.1),
+      selectedTileColor: AppColors.primary.withOpacity(0.1),
       onTap: onTap,
     );
   }

@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'agency_model.freezed.dart';
 part 'agency_model.g.dart';
 
-enum AgencyStatus { pending, approved, rejected, suspended }
+enum AgencyStatus { pending, accepted, rejected, suspended }
 enum MediaType {
   @JsonValue('news_agency')
   newsAgency,
@@ -28,6 +28,7 @@ class AgencyModel with _$AgencyModel {
     required String email,
     String? logoUrl,
     String? websiteUrl,
+    String? documentUrl,
     required MediaType mediaType,
     required AgencyStatus status,
     String? rejectReason,
@@ -43,14 +44,17 @@ class AgencyModel with _$AgencyModel {
   /// diffère du naming Dart (ex: `news_agency` vs `newsAgency`).
   factory AgencyModel.fromSupabase(Map<String, dynamic> row) {
     MediaType parseMediaType(String v) {
-      switch (v) {
+      final val = v.toLowerCase().trim();
+      switch (val) {
         case 'news_agency':
+        case 'newsagency':
           return MediaType.newsAgency;
         case 'newspaper':
           return MediaType.newspaper;
         case 'blog':
           return MediaType.blog;
         case 'tv_channel':
+        case 'tvchannel':
           return MediaType.tvChannel;
         case 'radio':
           return MediaType.radio;
@@ -61,10 +65,14 @@ class AgencyModel with _$AgencyModel {
     }
 
     AgencyStatus parseStatus(String v) {
-      switch (v) {
+      final s = v.toLowerCase().trim();
+      switch (s) {
+        case 'accepted':
+        case 'validated':
         case 'approved':
-          return AgencyStatus.approved;
+          return AgencyStatus.accepted;
         case 'rejected':
+        case 'refused':
           return AgencyStatus.rejected;
         case 'suspended':
           return AgencyStatus.suspended;
@@ -84,10 +92,13 @@ class AgencyModel with _$AgencyModel {
       email: (row['email'] ?? '').toString(),
       logoUrl: row['logo_url']?.toString(),
       websiteUrl: row['website_url']?.toString(),
+      documentUrl: row['document_url']?.toString(),
       mediaType: parseMediaType(mediaRaw),
       status: parseStatus(statusRaw),
       rejectReason: row['reject_reason']?.toString(),
-      createdAt: DateTime.parse(row['created_at'].toString()),
+      createdAt: row['created_at'] != null 
+          ? DateTime.parse(row['created_at'].toString()) 
+          : DateTime.now(),
       validatedAt: row['validated_at'] == null
           ? null
           : DateTime.parse(row['validated_at'].toString()),
@@ -101,11 +112,11 @@ extension AgencyStatusX on AgencyStatus {
   String get label {
     switch (this) {
       case AgencyStatus.pending:   return 'En attente';
-      case AgencyStatus.approved:  return 'Approuvée';
-      case AgencyStatus.rejected:  return 'Rejetée';
-      case AgencyStatus.suspended: return 'Suspendue';
+      case AgencyStatus.accepted:  return 'Accepté';
+      case AgencyStatus.rejected:  return 'Refusé';
+      case AgencyStatus.suspended: return 'Suspendu';
     }
   }
 
-  bool get canPublish => this == AgencyStatus.approved;
+  bool get canPublish => this == AgencyStatus.accepted;
 }

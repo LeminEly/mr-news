@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:mauritanie_news/shared/theme/app_theme.dart';
+import '../../../shared/theme/app_theme.dart';
+import '../../feed/providers/feed_providers.dart';
 
-class AgencyPendingScreen extends StatelessWidget {
+class AgencyPendingScreen extends ConsumerWidget {
   const AgencyPendingScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -37,6 +39,14 @@ class AgencyPendingScreen extends StatelessWidget {
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.xxl),
+              ElevatedButton.icon(
+                onPressed: () {
+                  ref.invalidate(currentAgencyProvider);
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('Vérifier à nouveau'),
+              ),
+              const SizedBox(height: AppSpacing.md),
               OutlinedButton.icon(
                 onPressed: () {
                   Supabase.instance.client.auth.signOut();

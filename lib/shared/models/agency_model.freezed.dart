@@ -26,6 +26,7 @@ mixin _$AgencyModel {
   String get email => throw _privateConstructorUsedError;
   String? get logoUrl => throw _privateConstructorUsedError;
   String? get websiteUrl => throw _privateConstructorUsedError;
+  String? get documentUrl => throw _privateConstructorUsedError;
   MediaType get mediaType => throw _privateConstructorUsedError;
   AgencyStatus get status => throw _privateConstructorUsedError;
   String? get rejectReason => throw _privateConstructorUsedError;
@@ -51,6 +52,7 @@ abstract class $AgencyModelCopyWith<$Res> {
       String email,
       String? logoUrl,
       String? websiteUrl,
+      String? documentUrl,
       MediaType mediaType,
       AgencyStatus status,
       String? rejectReason,
@@ -77,6 +79,7 @@ class _$AgencyModelCopyWithImpl<$Res, $Val extends AgencyModel>
     Object? email = null,
     Object? logoUrl = freezed,
     Object? websiteUrl = freezed,
+    Object? documentUrl = freezed,
     Object? mediaType = null,
     Object? status = null,
     Object? rejectReason = freezed,
@@ -107,6 +110,10 @@ class _$AgencyModelCopyWithImpl<$Res, $Val extends AgencyModel>
       websiteUrl: freezed == websiteUrl
           ? _value.websiteUrl
           : websiteUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      documentUrl: freezed == documentUrl
+          ? _value.documentUrl
+          : documentUrl // ignore: cast_nullable_to_non_nullable
               as String?,
       mediaType: null == mediaType
           ? _value.mediaType
@@ -147,6 +154,7 @@ abstract class _$$AgencyModelImplCopyWith<$Res>
       String email,
       String? logoUrl,
       String? websiteUrl,
+      String? documentUrl,
       MediaType mediaType,
       AgencyStatus status,
       String? rejectReason,
@@ -171,6 +179,7 @@ class __$$AgencyModelImplCopyWithImpl<$Res>
     Object? email = null,
     Object? logoUrl = freezed,
     Object? websiteUrl = freezed,
+    Object? documentUrl = freezed,
     Object? mediaType = null,
     Object? status = null,
     Object? rejectReason = freezed,
@@ -201,6 +210,10 @@ class __$$AgencyModelImplCopyWithImpl<$Res>
       websiteUrl: freezed == websiteUrl
           ? _value.websiteUrl
           : websiteUrl // ignore: cast_nullable_to_non_nullable
+              as String?,
+      documentUrl: freezed == documentUrl
+          ? _value.documentUrl
+          : documentUrl // ignore: cast_nullable_to_non_nullable
               as String?,
       mediaType: null == mediaType
           ? _value.mediaType
@@ -236,6 +249,7 @@ class _$AgencyModelImpl implements _AgencyModel {
       required this.email,
       this.logoUrl,
       this.websiteUrl,
+      this.documentUrl,
       required this.mediaType,
       required this.status,
       this.rejectReason,
@@ -258,6 +272,8 @@ class _$AgencyModelImpl implements _AgencyModel {
   @override
   final String? websiteUrl;
   @override
+  final String? documentUrl;
+  @override
   final MediaType mediaType;
   @override
   final AgencyStatus status;
@@ -270,7 +286,7 @@ class _$AgencyModelImpl implements _AgencyModel {
 
   @override
   String toString() {
-    return 'AgencyModel(id: $id, authUserId: $authUserId, name: $name, email: $email, logoUrl: $logoUrl, websiteUrl: $websiteUrl, mediaType: $mediaType, status: $status, rejectReason: $rejectReason, createdAt: $createdAt, validatedAt: $validatedAt)';
+    return 'AgencyModel(id: $id, authUserId: $authUserId, name: $name, email: $email, logoUrl: $logoUrl, websiteUrl: $websiteUrl, documentUrl: $documentUrl, mediaType: $mediaType, status: $status, rejectReason: $rejectReason, createdAt: $createdAt, validatedAt: $validatedAt)';
   }
 
   @override
@@ -286,6 +302,8 @@ class _$AgencyModelImpl implements _AgencyModel {
             (identical(other.logoUrl, logoUrl) || other.logoUrl == logoUrl) &&
             (identical(other.websiteUrl, websiteUrl) ||
                 other.websiteUrl == websiteUrl) &&
+            (identical(other.documentUrl, documentUrl) ||
+                other.documentUrl == documentUrl) &&
             (identical(other.mediaType, mediaType) ||
                 other.mediaType == mediaType) &&
             (identical(other.status, status) || other.status == status) &&
@@ -307,6 +325,7 @@ class _$AgencyModelImpl implements _AgencyModel {
       email,
       logoUrl,
       websiteUrl,
+      documentUrl,
       mediaType,
       status,
       rejectReason,
@@ -335,6 +354,7 @@ abstract class _AgencyModel implements AgencyModel {
       required final String email,
       final String? logoUrl,
       final String? websiteUrl,
+      final String? documentUrl,
       required final MediaType mediaType,
       required final AgencyStatus status,
       final String? rejectReason,
@@ -356,6 +376,8 @@ abstract class _AgencyModel implements AgencyModel {
   String? get logoUrl;
   @override
   String? get websiteUrl;
+  @override
+  String? get documentUrl;
   @override
   MediaType get mediaType;
   @override

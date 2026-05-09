@@ -14,6 +14,7 @@ _$AgencyModelImpl _$$AgencyModelImplFromJson(Map<String, dynamic> json) =>
       email: json['email'] as String,
       logoUrl: json['logo_url'] as String?,
       websiteUrl: json['website_url'] as String?,
+      documentUrl: json['document_url'] as String?,
       mediaType: $enumDecode(_$MediaTypeEnumMap, json['media_type']),
       status: $enumDecode(_$AgencyStatusEnumMap, json['status']),
       rejectReason: json['reject_reason'] as String?,
@@ -31,6 +32,7 @@ Map<String, dynamic> _$$AgencyModelImplToJson(_$AgencyModelImpl instance) =>
       'email': instance.email,
       'logo_url': instance.logoUrl,
       'website_url': instance.websiteUrl,
+      'document_url': instance.documentUrl,
       'media_type': _$MediaTypeEnumMap[instance.mediaType]!,
       'status': _$AgencyStatusEnumMap[instance.status]!,
       'reject_reason': instance.rejectReason,
@@ -49,7 +51,7 @@ const _$MediaTypeEnumMap = {
 
 const _$AgencyStatusEnumMap = {
   AgencyStatus.pending: 'pending',
-  AgencyStatus.approved: 'approved',
+  AgencyStatus.accepted: 'accepted',
   AgencyStatus.rejected: 'rejected',
   AgencyStatus.suspended: 'suspended',
 };

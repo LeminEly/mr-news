@@ -112,7 +112,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                 decoration: BoxDecoration(
                   color: AppColors.warningLight,
                   borderRadius: AppRadius.cardRadius,
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.35)),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.35)),
                 ),
                 child: Row(
                   children: [

@@ -9,9 +9,14 @@ import 'core/constants/app_constants.dart';
 import 'shared/theme/app_theme.dart';
 import 'app/router.dart';
 import 'core/constants/env.dart';
+import 'core/localization/l10n.dart';
+
+import 'package:intl/date_symbol_data_local.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('fr_FR', null);
+  await initializeDateFormatting('ar_SA', null);
 
   // Orientation portrait
   await SystemChrome.setPreferredOrientations([
@@ -88,9 +93,9 @@ class MauritanieNewsApp extends ConsumerWidget {
 
       // Localisation
       locale: locale,
-      supportedLocales: const [Locale('ar'), Locale('fr')],
+      supportedLocales: const [Locale('fr'), Locale('en'), Locale('ar')],
       localizationsDelegates: const [
-        // AppLocalizations.delegate, // ajouter avec flutter gen-l10n
+        AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

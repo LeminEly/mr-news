@@ -376,7 +376,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
               top: AppSpacing.sm,
               right: AppSpacing.sm,
               child: Material(
-                color: AppColors.surface.withValues(alpha: 0.92),
+                color: AppColors.surface.withOpacity(0.92),
                 shape: const CircleBorder(),
                 child: IconButton(
                   icon: const Icon(Icons.close, color: AppColors.error),
@@ -499,7 +499,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
         style: ElevatedButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: AppColors.textOnPrimary,
-          disabledBackgroundColor: bg.withValues(alpha: 0.75),
+          disabledBackgroundColor: bg.withOpacity(0.75),
           shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
         ),
         child: content,
@@ -664,7 +664,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                       ),
                       selected: sel,
                       onSelected: (_) => setState(() => _categoryId = e.id),
-                      selectedColor: AppColors.primary.withValues(alpha: 0.18),
+                      selectedColor: AppColors.primary.withOpacity(0.18),
                       checkmarkColor: AppColors.primary,
                       showCheckmark: false,
                       labelStyle: AppTextStyles.labelMedium.copyWith(
