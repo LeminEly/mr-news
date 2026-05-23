@@ -24,7 +24,6 @@ import '../features/admin/ui/users_management.dart';
 import '../features/admin/ui/admin_login_screen.dart';
 import '../features/admin/ui/agency_details_screen.dart';
 import '../features/admin/ui/articles_management.dart';
-import '../features/agency/ui/agency_dashboard_screen.dart';
 import '../features/webview/ui/article_webview_screen.dart';
 import '../features/auth/ui/unified_auth_screen.dart';
 import '../features/auth/ui/auth_home_screen.dart';
@@ -299,49 +298,6 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
-
-class SplashScreen extends StatefulWidget {
-  const SplashScreen({super.key});
-
-  @override
-  State<SplashScreen> createState() => _SplashScreenState();
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.go(AppRoutes.authHome);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
-}
-
-class _SplashScreenState extends State<SplashScreen> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      context.go(AppRoutes.authHome);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
-    );
-  }
-}
 
 class AgencyDashboardGate extends ConsumerWidget {
   const AgencyDashboardGate({super.key});
