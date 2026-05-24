@@ -45,6 +45,7 @@ class AppConstants {
   // LOCAL STORAGE KEYS
   static const String keyDeviceId       = 'device_id';
   static const String keyAppLanguage    = 'app_language';
+  static const String keyAgencyLanguage = 'agency_language';
   static const String keyOnboardingDone = 'onboarding_done';
 
   // VALIDATION

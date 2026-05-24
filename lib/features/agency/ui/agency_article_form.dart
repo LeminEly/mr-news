@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 import 'package:mauritanie_news/shared/models/article_model.dart';
@@ -124,15 +125,15 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
     super.dispose();
   }
 
-  String? _validateTitle(String? v) {
+  String? _validateTitle(String? v, AgencyLocalizations l10n) {
     final t = v?.trim() ?? '';
-    if (t.length < 3) return 'Minimum 3 caractères';
+    if (t.length < 3) return l10n.t('min_3_chars');
     return null;
   }
 
-  String? _validateUrl(String? v) {
+  String? _validateUrl(String? v, AgencyLocalizations l10n) {
     final t = v?.trim() ?? '';
-    if (!t.startsWith('https://')) return 'L’URL doit commencer par https://';
+    if (!t.startsWith('https://')) return l10n.t('url_https');
     return null;
   }
 
@@ -453,6 +454,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
   }
 
   Widget _buildPrimaryButton() {
+    final l10n = context.agencyL10n;
     final isEdit = widget.mode == AgencyFormMode.edit;
     final bg = isEdit ? AppColors.secondary : AppColors.primary;
 
@@ -479,14 +481,14 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           ),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            isEdit ? 'Sauvegarder les modifications' : 'Publier l’article',
+            isEdit ? l10n.t('save_changes') : l10n.t('publish_article_btn'),
             style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
           ),
         ],
       );
     } else {
       content = Text(
-        isEdit ? 'Sauvegarder les modifications' : 'Publier l’article',
+        isEdit ? l10n.t('save_changes') : l10n.t('publish_article_btn'),
         style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
       );
     }
@@ -509,13 +511,17 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
+    final agencyLocale = l10n.locale;
+    final isEdit = widget.mode == AgencyFormMode.edit;
+
     return Form(
       key: _formKey,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Informations principales',
+            l10n.t('main_info'),
             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -523,47 +529,45 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
             controller: _titleCtrl,
             maxLines: 3,
             onChanged: (_) => setState(() {}),
-            decoration: const InputDecoration(
-              labelText: 'Titre de l’article *',
-              hintText: 'Entrez un titre accrocheur…',
+            decoration: InputDecoration(
+              labelText: l10n.t('article_title'),
+              hintText: l10n.t('article_title_hint'),
               alignLabelWithHint: true,
             ),
-            validator: _validateTitle,
+            validator: (v) => _validateTitle(v, l10n),
           ),
           const SizedBox(height: AppSpacing.lg),
           TextFormField(
             controller: _urlCtrl,
             onChanged: (_) => setState(() {}),
             decoration: InputDecoration(
-              labelText: 'URL de l’article *',
-              hintText: 'https://votre-site.mr/article…',
+              labelText: l10n.t('article_url'),
+              hintText: l10n.t('article_url_hint'),
               prefixIcon: const Icon(Icons.link, color: AppColors.textSecondary),
               suffixIcon: TextButton(
                 onPressed: () {
-                  // TODO: connect to Supabase — ouvrir WebView d’aperçu réel.
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
-                        'Aperçu : ${_urlCtrl.text.trim().isEmpty ? "(vide)" : _urlCtrl.text.trim()}',
+                        l10n.tf('preview_label', params: {
+                          'url': _urlCtrl.text.trim().isEmpty
+                              ? l10n.t('preview_empty')
+                              : _urlCtrl.text.trim(),
+                        }),
                         style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
                       ),
-                      backgroundColor: AppColors.info,
                     ),
                   );
                 },
-                child: Text(
-                  'Aperçu',
-                  style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
-                ),
+                child: Text(l10n.t('live_preview')),
               ),
             ),
-            keyboardType: TextInputType.url,
-            validator: _validateUrl,
+            validator: (v) => _validateUrl(v, l10n),
           ),
           const SizedBox(height: AppSpacing.lg),
           if (!widget.hideCoverSection) ...[
             Text(
-              'Image de couverture *',
+              l10n.t('cover_image'),
               style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -585,7 +589,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     onPressed: _pickImage,
                     icon: const Icon(Icons.photo_camera_outlined, color: AppColors.primary),
                     label: Text(
-                      'Choisir une image',
+                      l10n.t('choose_image'),
                       style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -600,7 +604,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     onPressed: _promptCoverUrl,
                     icon: const Icon(Icons.link, color: AppColors.secondary),
                     label: Text(
-                      'Depuis une URL',
+                      l10n.t('from_url'),
                       style: AppTextStyles.buttonMedium.copyWith(color: AppColors.secondary),
                     ),
                     style: OutlinedButton.styleFrom(
@@ -615,16 +619,16 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           ],
           if (widget.hideCoverSection) const SizedBox(height: AppSpacing.sm),
           Text(
-            'Classification',
+            l10n.t('classification'),
             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('Langue', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+          Text(l10n.t('language'), style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.sm),
           SegmentedButton<String>(
-            segments: const [
-              ButtonSegment(value: 'fr', label: Text('Français')),
-              ButtonSegment(value: 'ar', label: Text('العربية')),
+            segments: [
+              ButtonSegment(value: 'fr', label: Text(l10n.t('article_language_fr'))),
+              ButtonSegment(value: 'ar', label: Text(l10n.t('article_language_ar'))),
             ],
             selected: {_language.name},
             emptySelectionAllowed: false,
@@ -645,7 +649,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Catégorie', style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
+          Text(l10n.t('filter_category'), style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.sm),
           LayoutBuilder(
             builder: (context, c) {
@@ -659,7 +663,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                     width: w,
                     child: FilterChip(
                       label: Text(
-                        '${e.icon} ${e.name(Localizations.localeOf(context))}',
+                        '${e.icon} ${e.name(agencyLocale)}',
                         textAlign: TextAlign.center,
                       ),
                       selected: sel,
@@ -683,7 +687,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
           ),
           const SizedBox(height: AppSpacing.xxl),
           Text(
-            'Aperçu temps réel',
+            l10n.t('live_preview'),
             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -701,7 +705,7 @@ class _AgencyArticleFormState extends State<AgencyArticleForm>
                 shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
               ),
               child: Text(
-                'Annuler',
+                l10n.t('cancel'),
                 style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textSecondary),
               ),
             ),

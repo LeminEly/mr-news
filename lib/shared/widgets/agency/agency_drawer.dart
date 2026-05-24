@@ -2,6 +2,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_language_switch.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/shared/models/agency_model.dart';
 
@@ -34,6 +36,7 @@ class AgencyDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
     final a = agency;
     final logoUrl = (a?.logoUrl ?? '').trim();
     final name = (a?.name ?? 'Agence').trim();
@@ -102,7 +105,7 @@ class AgencyDrawer extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    _StatusBadge(status: status),
+                    _StatusBadge(status: status, l10n: l10n),
                   ],
                 ),
               ),
@@ -113,7 +116,7 @@ class AgencyDrawer extends StatelessWidget {
                 children: [
                   _DrawerTile(
                     icon: Icons.dashboard_rounded,
-                    label: 'Tableau de bord',
+                    label: l10n.t('dashboard'),
                     selected: selectedItem == AgencyDrawerSelection.dashboard,
                     onTap: () {
                       onDashboard();
@@ -122,7 +125,7 @@ class AgencyDrawer extends StatelessWidget {
                   ),
                   _DrawerTile(
                     icon: Icons.edit_note_rounded,
-                    label: 'Publier un article',
+                    label: l10n.t('publish_article'),
                     selected: selectedItem == AgencyDrawerSelection.publish,
                     onTap: () {
                       onPublish();
@@ -131,7 +134,7 @@ class AgencyDrawer extends StatelessWidget {
                   ),
                   _DrawerTile(
                     icon: Icons.person_outline_rounded,
-                    label: 'Mon Profil',
+                    label: l10n.t('my_profile'),
                     selected: false,
                     onTap: () {
                       onProfile();
@@ -141,10 +144,15 @@ class AgencyDrawer extends StatelessWidget {
                   const Divider(height: 1, color: AppColors.divider),
                   _DrawerTile(
                     icon: Icons.logout_rounded,
-                    label: 'Déconnexion',
+                    label: l10n.t('logout'),
                     selected: false,
                     danger: true,
                     onTap: onLogout,
+                  ),
+                  const Divider(height: 1, color: AppColors.divider),
+                  const Padding(
+                    padding: EdgeInsets.all(AppSpacing.md),
+                    child: AgencyLanguageSwitcher(),
                   ),
                 ],
               ),
@@ -192,9 +200,10 @@ class _DrawerHeaderFadeState extends State<_DrawerHeaderFade>
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status});
+  const _StatusBadge({required this.status, required this.l10n});
 
   final AgencyStatus? status;
+  final AgencyLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -202,13 +211,13 @@ class _StatusBadge extends StatelessWidget {
     final label = () {
       switch (s) {
         case AgencyStatus.accepted:
-          return 'Approuvée';
+          return l10n.t('status_approved');
         case AgencyStatus.pending:
-          return 'En attente';
+          return l10n.t('status_pending');
         case AgencyStatus.rejected:
-          return 'Rejetée';
+          return l10n.t('status_rejected');
         case AgencyStatus.suspended:
-          return 'Suspendue';
+          return l10n.t('status_suspended');
         case null:
           return '—';
       }

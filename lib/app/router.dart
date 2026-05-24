@@ -1,9 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../shared/theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../features/feed/providers/feed_providers.dart';
 
 import '../features/feed/ui/feed_screen.dart';
 import '../features/onboarding/ui/onboarding_screen.dart';
@@ -12,7 +12,8 @@ import '../features/agency/ui/agency_login_screen.dart';
 import '../features/agency/ui/agency_pending.dart';
 import '../features/agency/ui/publish_article_screen.dart';
 import '../features/agency/ui/agency_profile.dart';
-import '../features/agency/ui/agency_dashboard_screen.dart';
+import '../features/agency/ui/agency_dashboard_gate.dart';
+import '../features/agency/ui/agency_locale_scope.dart';
 import '../shared/models/agency_model.dart';
 import '../features/admin/ui/stats_dashboard.dart';
 import '../features/admin/ui/agency_validation.dart';
@@ -57,64 +58,50 @@ class AppRoutes {
 // Global flag to allow test admin login without Supabase backend dependency
 bool bypassAdminAuth = false;
 
+/// Réévalue le redirect sans recréer GoRouter (évite reset vers / → /feed après login).
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<dynamic> stream) {
+    _subscription = stream.listen((_) => notifyListeners());
+  }
+
+  late final StreamSubscription<dynamic> _subscription;
+
+  @override
+  void dispose() {
+    _subscription.cancel();
+    super.dispose();
+  }
+}
+
 // Router provider
 final routerProvider = Provider<GoRouter>((ref) {
-  ref.watch(authStateProvider);
+  final authRefresh = GoRouterRefreshStream(
+    Supabase.instance.client.auth.onAuthStateChange,
+  );
+  ref.onDispose(authRefresh.dispose);
 
   return GoRouter(
     initialLocation: AppRoutes.authHome,
+    refreshListenable: authRefresh,
     debugLogDiagnostics: true,
     redirect: (context, state) {
-      final user = Supabase.instance.client.auth.currentUser;
-      final role = user?.userMetadata?['role'] as String?;
-      final isAuthenticated = user != null;
-      final loc = state.matchedLocation;
+      final location = state.matchedLocation;
 
-      // Splash
-      if (loc == AppRoutes.splash) return null;
-
-      // Automatic redirection from AuthHome or login pages if already authenticated
-      if ((loc == AppRoutes.authHome ||
-              loc == '/' ||
-              loc == AppRoutes.adminLogin ||
-              loc == AppRoutes.agencyLogin) &&
-          isAuthenticated) {
-        if (role == 'admin') return AppRoutes.adminDashboard;
-        if (role == 'agency') return AppRoutes.agencyDashboard;
-        return AppRoutes.feed;
+      // Ces routes ne doivent JAMAIS être redirigées par ce guard global.
+      if (location.startsWith('/agency') ||
+          location.startsWith('/admin') ||
+          location == AppRoutes.feed ||
+          location == AppRoutes.onboarding ||
+          location == AppRoutes.articleWebView ||
+          location == AppRoutes.splash ||
+          location == '/auth-unified') {
+        return null;
       }
 
-      // Allow access to public routes
-      final publicRoutes = [
-        AppRoutes.authHome,
-        AppRoutes.onboarding,
-        AppRoutes.feed,
-        AppRoutes.articleWebView,
-        AppRoutes.agencyRegister,
-        AppRoutes.agencyLogin,
-        AppRoutes.adminLogin,
-        '/auth-unified',
-      ];
-      if (publicRoutes.any((r) => loc == r)) return null;
-
-      // Bypass test for Admin
-      if (bypassAdminAuth && loc.startsWith('/admin')) return null;
-
-      // Global protection: if not authenticated and trying to access protected route
-      if (!isAuthenticated) return AppRoutes.authHome;
-
-      // Agency routes protection
-      if (loc.startsWith('/agency')) {
-        if (role == 'agency' || role == 'admin') return null;
+      // Route racine / → fil d'actualité
+      if (location == '/' || location == AppRoutes.authHome) {
         return AppRoutes.feed;
       }
-
-      // Admin routes protection
-      if (loc.startsWith('/admin')) {
-        if (role == 'admin') return null;
-        return AppRoutes.feed;
-      }
-
 
       return null;
     },
@@ -169,41 +156,48 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.agencyRegister,
         name: 'agency-register',
-        builder: (context, state) => const AgencyRegisterScreen(),
+        builder: (context, state) => agencyRoute(const AgencyRegisterScreen()),
       ),
 
       // Agence : Login
       GoRoute(
         path: AppRoutes.agencyLogin,
         name: 'agency-login',
-        builder: (context, state) => const AgencyLoginScreen(),
+        builder: (context, state) => agencyRoute(const AgencyLoginScreen()),
       ),
 
       // Agence : Attente validation
       GoRoute(
         path: AppRoutes.agencyPending,
         name: 'agency-pending',
-        builder: (context, state) => const AgencyPendingScreen(),
+        builder: (context, state) => agencyRoute(const AgencyPendingScreen()),
       ),
 
       GoRoute(
         path: AppRoutes.agencyDashboard,
         name: 'agency-dashboard',
-        builder: (context, state) => const AgencyDashboardGate(),
+        builder: (context, state) {
+          final extra = state.extra;
+          return agencyRoute(
+            AgencyDashboardGate(
+              initialAgency: extra is AgencyModel ? extra : null,
+            ),
+          );
+        },
       ),
 
       // Agence : Publier
       GoRoute(
         path: AppRoutes.agencyPublish,
         name: 'agency-publish',
-        builder: (context, state) => const AgencyPublishGate(),
+        builder: (context, state) => agencyRoute(const AgencyPublishGate()),
       ),
 
       // Agence : Modifier article
       GoRoute(
         path: AppRoutes.agencyEditArticle,
         name: 'agency-edit-article',
-        builder: (context, state) => const Scaffold(),
+        builder: (context, state) => agencyRoute(const Scaffold()),
       ),
 
       // Agence : Profil
@@ -212,8 +206,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'agency-profile',
         builder: (context, state) {
           final extra = state.extra;
-          return AgencyProfileScreen(
-            agency: extra is AgencyModel ? extra : null,
+          return agencyRoute(
+            AgencyProfileScreen(
+              agency: extra is AgencyModel ? extra : null,
+            ),
           );
         },
       ),
@@ -298,42 +294,3 @@ final routerProvider = Provider<GoRouter>((ref) {
     ),
   );
 });
-
-class AgencyDashboardGate extends ConsumerWidget {
-  const AgencyDashboardGate({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final agencyAsync = ref.watch(currentAgencyProvider);
-
-    return agencyAsync.when(
-      data: (agency) {
-        if (agency.status == AgencyStatus.pending) {
-          return const AgencyPendingScreen();
-        }
-
-        if (agency.status == AgencyStatus.rejected) {
-          return const AgencyPendingScreen();
-        }
-
-        return AgencyDashboardScreen(agency: agency);
-      },
-      loading: () => const Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: AppSpacing.md),
-              Text('Chargement de votre espace...'),
-            ],
-          ),
-        ),
-      ),
-      error: (err, stack) {
-        debugPrint('AgencyDashboardGate Error: $err\n$stack');
-        return const AgencyPendingScreen();
-      },
-    );
-  }
-}

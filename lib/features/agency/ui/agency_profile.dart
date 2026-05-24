@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/features/feed/providers/feed_providers.dart';
 import 'package:mauritanie_news/shared/models/agency_model.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
@@ -51,7 +52,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
       setState(() {
         _agency = a;
         _loading = false;
-        _loadError = a == null ? 'Profil agence introuvable' : null;
+        _loadError = a == null ? context.agencyL10n.t('profile_not_found') : null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -62,20 +63,35 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
     }
   }
 
-  String _mediaTypeLabel(MediaType t) {
+  String _mediaTypeLabel(MediaType t, AgencyLocalizations l10n) {
     switch (t) {
       case MediaType.newsAgency:
-        return 'Agence de presse';
+        return l10n.t('media_news_agency');
       case MediaType.newspaper:
-        return 'Presse écrite';
+        return l10n.t('media_newspaper');
       case MediaType.blog:
-        return 'Blog';
+        return l10n.t('media_blog');
       case MediaType.tvChannel:
-        return 'Télévision';
+        return l10n.t('media_tv');
       case MediaType.radio:
-        return 'Radio';
+        return l10n.t('media_radio');
       case MediaType.other:
-        return 'Autre';
+        return l10n.t('media_other');
+    }
+  }
+
+  String _statusLabel(AgencyStatus? s, AgencyLocalizations l10n) {
+    switch (s) {
+      case AgencyStatus.accepted:
+        return l10n.t('status_approved');
+      case AgencyStatus.pending:
+        return l10n.t('status_pending');
+      case AgencyStatus.rejected:
+        return l10n.t('status_rejected');
+      case AgencyStatus.suspended:
+        return l10n.t('status_suspended');
+      case null:
+        return '—';
     }
   }
 
@@ -88,7 +104,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Le changement de logo depuis la galerie n’est pas disponible sur le web.',
+            context.agencyL10n.t('logo_web_unavailable'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -125,7 +141,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
         SnackBar(
           backgroundColor: AppColors.success,
           content: Text(
-            'Logo mis à jour',
+            context.agencyL10n.t('logo_updated'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -138,7 +154,7 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Échec du téléversement : $e',
+            '${context.agencyL10n.t('logo_upload_failed')} : $e',
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -168,13 +184,17 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
+    final dateLocale = l10n.isAr ? 'ar_SA' : 'fr_FR';
+    final datePattern = l10n.isAr ? "d MMM yyyy، HH:mm" : "d MMM yyyy 'à' HH:mm";
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         title: Text(
-          'Mon profil',
+          l10n.t('profile_title'),
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
         ),
       ),
@@ -270,38 +290,38 @@ class _AgencyProfileScreenState extends ConsumerState<AgencyProfileScreen> {
                           if (!kIsWeb) ...[
                             const SizedBox(height: AppSpacing.sm),
                             Text(
-                              'Appuyez sur l’icône appareil photo pour changer le logo.',
+                              l10n.t('change_logo_hint'),
                               textAlign: TextAlign.center,
                               style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
                             ),
                           ],
                           const SizedBox(height: AppSpacing.xxl),
                           Text(
-                            'Informations',
+                            l10n.t('profile_info'),
                             style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
                           ),
                           const SizedBox(height: AppSpacing.lg),
-                          _infoRow('Nom', _agency!.name),
-                          _infoRow('E-mail', _agency!.email),
+                          _infoRow(l10n.t('field_name'), _agency!.name),
+                          _infoRow(l10n.t('field_email'), _agency!.email),
                           _infoRow(
-                            'Site web',
+                            l10n.t('website_label'),
                             (_agency!.websiteUrl ?? '—').trim().isEmpty
                                 ? '—'
                                 : _agency!.websiteUrl!.trim(),
                           ),
-                          _infoRow('Type de média', _mediaTypeLabel(_agency!.mediaType)),
-                          _infoRow('Statut', _agency!.status.label),
+                          _infoRow(l10n.t('media_type'), _mediaTypeLabel(_agency!.mediaType, l10n)),
+                          _infoRow(l10n.t('field_status'), _statusLabel(_agency!.status, l10n)),
                           if ((_agency!.rejectReason ?? '').trim().isNotEmpty)
-                            _infoRow('Motif (rejet)', _agency!.rejectReason!.trim()),
+                            _infoRow(l10n.t('reject_reason'), _agency!.rejectReason!.trim()),
                           _infoRow(
-                            'Compte créé le',
-                            DateFormat("d MMM yyyy 'à' HH:mm", 'fr_FR')
+                            l10n.t('account_created'),
+                            DateFormat(datePattern, dateLocale)
                                 .format(_agency!.createdAt.toLocal()),
                           ),
                           if (_agency!.validatedAt != null)
                             _infoRow(
-                              'Validé le',
-                              DateFormat("d MMM yyyy 'à' HH:mm", 'fr_FR')
+                              l10n.t('validated_at'),
+                              DateFormat(datePattern, dateLocale)
                                   .format(_agency!.validatedAt!.toLocal()),
                             ),
                           const SizedBox(height: AppSpacing.xxl),

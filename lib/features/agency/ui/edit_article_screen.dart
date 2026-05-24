@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 import 'package:mauritanie_news/features/agency/ui/agency_article_form.dart';
@@ -44,12 +45,15 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
     super.dispose();
   }
 
-  String _formatDate(DateTime d) {
-    return DateFormat("d MMM yyyy 'à' HH:mm", 'fr_FR').format(d);
+  String _formatDate(DateTime d, AgencyLocalizations l10n) {
+    final pattern = l10n.isAr ? "d MMM yyyy، HH:mm" : "d MMM yyyy 'à' HH:mm";
+    final locale = l10n.isAr ? 'ar_SA' : 'fr_FR';
+    return DateFormat(pattern, locale).format(d);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
     final last = widget.article.updatedAt;
 
     return Scaffold(
@@ -80,7 +84,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                 children: [
                   Expanded(
                     child: Text(
-                      'Modifier l’article',
+                      l10n.t('edit_article'),
                       style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnPrimary),
                     ),
                   ),
@@ -91,7 +95,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                       borderRadius: AppRadius.chipRadius,
                     ),
                     child: Text(
-                      'Modifié',
+                      l10n.t('modified_badge'),
                       style: AppTextStyles.labelMedium.copyWith(color: AppColors.warning),
                     ),
                   ),
@@ -120,7 +124,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Dernière modification : ${_formatDate(last)}',
+                        l10n.tf('last_modified', params: {'date': _formatDate(last, l10n)}),
                         style: AppTextStyles.bodySmall.copyWith(color: AppColors.textPrimary),
                       ),
                     ),
@@ -166,7 +170,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                       SnackBar(
                         backgroundColor: AppColors.success,
                         content: Text(
-                          'Modifications enregistrées',
+                          l10n.t('changes_saved'),
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: AppColors.textOnPrimary),
                         ),
@@ -180,7 +184,7 @@ class _EditArticleScreenState extends ConsumerState<EditArticleScreen>
                       SnackBar(
                         backgroundColor: AppColors.error,
                         content: Text(
-                          'Erreur lors de la mise à jour',
+                          l10n.t('update_error'),
                           style: AppTextStyles.bodyMedium
                               .copyWith(color: AppColors.textOnPrimary),
                         ),

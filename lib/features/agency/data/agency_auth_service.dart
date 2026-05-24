@@ -7,6 +7,10 @@ class AgencyAuthService {
   final SupabaseClient _client;
   AgencyAuthService(this._client);
 
+  /// Bucket Storage pour le document justificatif à la création de compte.
+  static const String bucketAgencyDocuments = 'agency-documents';
+  static const String bucketAgencyLogos = 'agency-logos';
+
   Future<void> register({
     required String email,
     required String password,
@@ -26,7 +30,15 @@ class AgencyAuthService {
         data: const {'role': 'agency'},
       );
       final user = authResponse.user;
-      if (user == null) throw Exception('Échec création compte');
+      if (user == null) {
+        throw 'Échec création compte : utilisateur non retourné par Supabase.';
+      }
+      final userId = user.id.trim();
+      if (userId.isEmpty) {
+        throw 'Échec création compte : identifiant utilisateur manquant.';
+      }
+
+      debugPrint('[AgencyRegister] signUp OK — userId=$userId');
 
       final String mediaTypeStr = _mapMediaTypeToString(mediaType);
       
@@ -35,15 +47,20 @@ class AgencyAuthService {
       const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
       final serviceClient = SupabaseClient(Env.appSupabaseUrl, serviceRoleKey);
 
-      await serviceClient.from('agencies').insert({
-        'auth_user_id': user.id,
-        'name': agencyName,
-        'email': email,
-        'website_url': websiteUrl,
-        'media_type': mediaTypeStr,
-        'logo_url': logoUrl,
-        'status': 'pending',
-      });
+      await _updateAgencyRow(
+        serviceClient,
+        userId: userId,
+        fields: {
+          'auth_user_id': userId,
+          'name': agencyName,
+          'email': email,
+          'website_url': websiteUrl,
+          'media_type': mediaTypeStr,
+          'logo_url': logoUrl,
+          'status': 'pending',
+        },
+        step: 'création du profil agence',
+      );
 
       // Try to login for session (might fail if email unconfirmed, which is OK)
       if (_client.auth.currentSession == null) {
@@ -53,39 +70,163 @@ class AgencyAuthService {
       }
 
       if (logoBytes != null && logoBytes.isNotEmpty) {
-        final uploadedLogoUrl = await _uploadFile(
-          userId: user.id,
-          bytes: logoBytes,
-          fileExt: logoFileExt,
-          bucket: 'agency-logos',
-          prefix: 'logo',
-        );
-        await serviceClient.from('agencies').update({'logo_url': uploadedLogoUrl}).eq('auth_user_id', user.id);
+        try {
+          debugPrint(
+            '[AgencyRegister] Upload logo → supabase.storage.from("$bucketAgencyLogos")',
+          );
+          final uploadedLogoUrl = await _uploadFile(
+            userId: userId,
+            bytes: logoBytes,
+            fileExt: logoFileExt,
+            bucket: bucketAgencyLogos,
+            prefix: 'logo',
+          );
+          await _updateAgencyRow(
+            serviceClient,
+            userId: userId,
+            fields: {'logo_url': uploadedLogoUrl},
+            step: 'enregistrement du logo',
+          );
+        } on StorageException catch (e) {
+          debugPrint(
+            '[AgencyRegister] StorageException logo bucket=$bucketAgencyLogos: '
+            '${e.message} (status=${e.statusCode})',
+          );
+          throw _storageUploadMessage(
+            e,
+            bucket: bucketAgencyLogos,
+            kind: 'logo',
+          );
+        }
       }
 
       if (documentBytes != null && documentBytes.isNotEmpty) {
-        final documentUrl = await _uploadFile(
-          userId: user.id,
-          bytes: documentBytes,
-          fileExt: documentFileExt,
-          bucket: 'agency-documents',
-          prefix: 'doc',
-        );
-        await serviceClient.from('agencies').update({'document_url': documentUrl}).eq('auth_user_id', user.id);
+        try {
+          debugPrint(
+            '[AgencyRegister] Upload document justificatif → '
+            'supabase.storage.from("$bucketAgencyDocuments")',
+          );
+          final documentUrl = await _uploadFile(
+            userId: userId,
+            bytes: documentBytes,
+            fileExt: documentFileExt,
+            bucket: bucketAgencyDocuments,
+            prefix: 'doc',
+          );
+          await _updateAgencyRow(
+            serviceClient,
+            userId: userId,
+            fields: {'document_url': documentUrl},
+            step: 'enregistrement du document justificatif',
+          );
+        } on StorageException catch (e) {
+          debugPrint(
+            '[AgencyRegister] StorageException document bucket=$bucketAgencyDocuments: '
+            '${e.message} (status=${e.statusCode})',
+          );
+          throw _storageUploadMessage(
+            e,
+            bucket: bucketAgencyDocuments,
+            kind: 'document justificatif',
+          );
+        }
       }
+
+      debugPrint('[AgencyRegister] Inscription terminée avec succès — userId=$userId');
       
     } on AuthApiException catch (e) {
+      debugPrint('[AgencyRegister] AuthApiException: ${e.message} (code=${e.code})');
       if (e.message.contains('already registered') || e.code == 'user_already_exists') {
         throw 'Cet email est déjà utilisé par une autre agence.';
       }
-      rethrow;
+      throw 'Erreur d\'authentification lors de l\'inscription : ${e.message}';
+    } on StorageException catch (e) {
+      debugPrint('[AgencyRegister] StorageException: ${e.message} (status=${e.statusCode})');
+      throw _storageUploadMessage(e, bucket: bucketAgencyDocuments, kind: 'fichier');
     } on PostgrestException catch (e) {
-      debugPrint('Supabase insertion error: ${e.message}');
-      throw 'Erreur lors de la création du profil: ${e.message}';
+      debugPrint(
+        '[AgencyRegister] PostgrestException: ${e.message} '
+        '(code=${e.code}, details=${e.details})',
+      );
+      throw _postgrestRegistrationMessage(e);
     } catch (e) {
       debugPrint('Unexpected registration error: $e');
-      throw 'Une erreur inattendue est survenue lors de l\'inscription.';
+      if (e is String) rethrow;
+      final detail = e.toString().replaceFirst('Exception: ', '').trim();
+      if (detail.isEmpty) {
+        throw 'L\'inscription a échoué. Veuillez réessayer.';
+      }
+      throw 'L\'inscription a échoué : $detail';
     }
+  }
+
+  Future<void> _updateAgencyRow(
+    SupabaseClient client, {
+    required String userId,
+    required Map<String, dynamic> fields,
+    required String step,
+  }) async {
+    try {
+      if (fields.containsKey('auth_user_id')) {
+        await client.from('agencies').insert(fields);
+      } else {
+        await client.from('agencies').update(fields).eq('auth_user_id', userId);
+      }
+    } on PostgrestException catch (e) {
+      debugPrint(
+        '[AgencyRegister] PostgrestException ($step): ${e.message} '
+        '(champs=${fields.keys.join(', ')})',
+      );
+      throw _postgrestRegistrationMessage(e, step: step, fields: fields);
+    }
+  }
+
+  String _postgrestRegistrationMessage(
+    PostgrestException e, {
+    String? step,
+    Map<String, dynamic>? fields,
+  }) {
+    final msg = e.message;
+    final missingCol = RegExp(
+      r"Could not find the '(\w+)' column",
+      caseSensitive: false,
+    ).firstMatch(msg);
+    if (missingCol != null) {
+      final column = missingCol.group(1) ?? 'inconnue';
+      return 'Colonne Supabase manquante : « $column » dans la table agencies. '
+          'Exécutez dans SQL Editor : '
+          'ALTER TABLE agencies ADD COLUMN IF NOT EXISTS $column TEXT; '
+          'puis Dashboard → Settings → API → Reload schema.';
+    }
+    if (fields != null && fields.isNotEmpty) {
+      final cols = fields.keys.join(', ');
+      final prefix = step != null ? '$step — ' : '';
+      return '${prefix}Erreur base de données (colonnes : $cols) : $msg';
+    }
+    return 'Erreur lors de la création du profil : $msg';
+  }
+
+  String _storageUploadMessage(
+    StorageException e, {
+    required String bucket,
+    required String kind,
+  }) {
+    final msg = e.message.toLowerCase();
+    final status = e.statusCode?.toString() ?? '';
+
+    if (status == '404' || msg.contains('bucket not found')) {
+      return 'Échec de l\'upload du $kind : le bucket Storage « $bucket » '
+          'n\'existe pas dans Supabase. Créez le bucket « $bucket » dans '
+          'Dashboard → Storage (PUBLIC, PDF/JPG/PNG), puis réessayez.';
+    }
+    if (status == '403' ||
+        msg.contains('permission') ||
+        msg.contains('policy') ||
+        msg.contains('unauthorized')) {
+      return 'Échec de l\'upload du $kind : permissions insuffisantes sur '
+          'le bucket « $bucket ». Vérifiez les policies Storage.';
+    }
+    return 'Échec de l\'upload du $kind. Veuillez réessayer. (${e.message})';
   }
 
   String _mapMediaTypeToString(MediaType type) {
@@ -119,11 +260,24 @@ class AgencyAuthService {
       _ => 'application/octet-stream',
     };
 
-    await _client.storage.from(bucket).uploadBinary(
-          path,
-          bytes,
-          fileOptions: FileOptions(contentType: contentType, upsert: true),
-        );
+    debugPrint(
+      '[AgencyRegister] storage.from("$bucket").uploadBinary path=$path '
+      'contentType=$contentType bytes=${bytes.length}',
+    );
+
+    try {
+      await _client.storage.from(bucket).uploadBinary(
+            path,
+            bytes,
+            fileOptions: FileOptions(contentType: contentType, upsert: true),
+          );
+    } on StorageException catch (e) {
+      debugPrint(
+        '[AgencyRegister] Upload échoué bucket="$bucket" path=$path: '
+        '${e.message} (status=${e.statusCode})',
+      );
+      rethrow;
+    }
     return _client.storage.from(bucket).getPublicUrl(path);
   }
 

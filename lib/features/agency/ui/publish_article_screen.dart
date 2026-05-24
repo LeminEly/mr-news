@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 import 'package:mauritanie_news/features/agency/ui/agency_article_form.dart';
@@ -41,7 +42,7 @@ class _AgencyPublishGateState extends State<AgencyPublishGate> {
       setState(() {
         _agency = agency;
         _loading = false;
-        _error = agency == null ? 'Profil agence introuvable' : null;
+        _error = agency == null ? context.agencyL10n.t('profile_not_found') : null;
       });
     } catch (e) {
       if (!mounted) return;
@@ -61,6 +62,7 @@ class _AgencyPublishGateState extends State<AgencyPublishGate> {
         ),
       );
     }
+    final l10n = context.agencyL10n;
     if (_error != null || _agency == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
@@ -68,7 +70,7 @@ class _AgencyPublishGateState extends State<AgencyPublishGate> {
           child: Padding(
             padding: AppSpacing.pagePadding,
             child: Text(
-              _error ?? 'Profil agence introuvable',
+              _error ?? l10n.t('profile_not_found'),
               textAlign: TextAlign.center,
               style: AppTextStyles.bodyLarge,
             ),
@@ -144,7 +146,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'La galerie n’est pas disponible sur le web.',
+            context.agencyL10n.t('gallery_web_unavailable'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -191,22 +193,36 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
       _coverImageUrlNotifier.value = publicUrl;
       debugPrint('Image uploadée: $publicUrl');
     } catch (e) {
-      debugPrint('Erreur upload image: $e');
+      debugPrint('Upload error: $e');
+      var errorMsg = context.agencyL10n.t('upload_image_error');
+      final errText = e.toString();
+      if (errText.contains('Bucket not found') || errText.contains('404')) {
+        errorMsg = 'Bucket Storage non configuré.\n'
+            'Créez le bucket "article-covers" dans '
+            'Supabase Dashboard → Storage → New bucket';
+      } else {
+        errorMsg = 'Erreur upload: $errText';
+      }
       if (!mounted) return;
-      setState(() => _isUploadingImage = false);
+      setState(() {
+        _coverImageUrlNotifier.value = null;
+        _isUploadingImage = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Erreur upload image: $e',
+            errorMsg,
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
           backgroundColor: AppColors.error,
+          duration: const Duration(seconds: 5),
         ),
       );
     }
   }
 
   void _showImageSourceDialog() {
+    final l10n = context.agencyL10n;
     showModalBottomSheet<void>(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -219,7 +235,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
             ListTile(
               leading: const Icon(Icons.photo_library_outlined, color: AppColors.primary),
               title: Text(
-                'Depuis la galerie',
+                l10n.t('from_gallery'),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
               ),
               onTap: () {
@@ -230,7 +246,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
             ListTile(
               leading: const Icon(Icons.link, color: AppColors.primary),
               title: Text(
-                'Depuis une URL',
+                l10n.t('from_url'),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
               ),
               onTap: () {
@@ -245,13 +261,14 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
   }
 
   void _showUrlDialog() {
+    final l10n = context.agencyL10n;
     final urlController = TextEditingController();
     showDialog<void>(
       context: context,
       builder: (dialogCtx) => AlertDialog(
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
         title: Text(
-          'URL de l’image',
+          l10n.t('image_url'),
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
         ),
         content: TextField(
@@ -269,7 +286,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
               WidgetsBinding.instance.addPostFrameCallback((_) => urlController.dispose());
             },
             child: Text(
-              'Annuler',
+              l10n.t('cancel'),
               style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textSecondary),
             ),
           ),
@@ -287,7 +304,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
               }
             },
             child: Text(
-              'Confirmer',
+              l10n.t('confirm_btn'),
               style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textOnPrimary),
             ),
           ),
@@ -297,6 +314,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
   }
 
   Widget _buildImagePreview() {
+    final l10n = context.agencyL10n;
     if (_isUploadingImage) {
       return Container(
         height: 180,
@@ -312,7 +330,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
               const CircularProgressIndicator(color: AppColors.primary),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Upload en cours…',
+                l10n.t('upload_in_progress'),
                 style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               ),
             ],
@@ -381,13 +399,13 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
             const Icon(Icons.add_photo_alternate_outlined, size: 48, color: AppColors.textTertiary),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Ajouter une image de couverture',
+              l10n.t('add_cover_image'),
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Galerie ou URL',
+              l10n.t('gallery_or_url'),
               style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
             ),
           ],
@@ -423,7 +441,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Erreur de chargement des catégories',
+            context.agencyL10n.t('categories_load_error'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -433,6 +451,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: PreferredSize(
@@ -458,7 +477,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
               backgroundColor: Colors.transparent,
               elevation: 0,
               title: Text(
-                'Publier un article',
+                l10n.t('publish_article'),
                 style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnPrimary),
               ),
             );
@@ -476,7 +495,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Image de couverture',
+                      l10n.t('cover_image'),
                       style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
                     ),
                     const SizedBox(height: AppSpacing.sm),
@@ -506,7 +525,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                         SnackBar(
                           backgroundColor: AppColors.error,
                           content: Text(
-                            'Profil agence introuvable',
+                            l10n.t('profile_not_found'),
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textOnPrimary),
                           ),
@@ -521,7 +540,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                         SnackBar(
                           backgroundColor: AppColors.warning,
                           content: Text(
-                            'Votre agence est en attente de validation. Vous pourrez publier après approbation.',
+                            l10n.t('pending_publish'),
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textOnPrimary),
                           ),
@@ -537,7 +556,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                         SnackBar(
                           backgroundColor: AppColors.error,
                           content: Text(
-                            'Sélectionnez une catégorie',
+                            l10n.t('select_category'),
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textOnPrimary),
                           ),
@@ -552,7 +571,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                         SnackBar(
                           backgroundColor: AppColors.error,
                           content: Text(
-                            'Titre et lien source sont obligatoires',
+                            l10n.t('title_url_required'),
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textOnPrimary),
                           ),
@@ -575,7 +594,7 @@ class _PublishArticleScreenState extends ConsumerState<PublishArticleScreen>
                         SnackBar(
                           backgroundColor: AppColors.success,
                           content: Text(
-                            'Article publié avec succès !',
+                            l10n.t('article_published_success'),
                             style: AppTextStyles.bodyMedium
                                 .copyWith(color: AppColors.textOnPrimary),
                           ),

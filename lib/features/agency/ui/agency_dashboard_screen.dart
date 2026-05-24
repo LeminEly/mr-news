@@ -5,7 +5,11 @@ import 'package:shimmer/shimmer.dart';
 
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
+import 'package:mauritanie_news/features/agency/providers/agency_locale_provider.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_language_switch.dart';
 import 'package:mauritanie_news/features/agency/ui/publish_article_screen.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_locale_scope.dart';
 import 'package:mauritanie_news/shared/widgets/agency/agency_drawer.dart';
 import 'package:mauritanie_news/shared/widgets/agency/article_card_agency.dart';
 import 'package:mauritanie_news/shared/widgets/agency/empty_state_widget.dart';
@@ -17,7 +21,8 @@ import 'package:mauritanie_news/features/agency/ui/edit_article_screen.dart';
 import 'package:mauritanie_news/features/agency/ui/agency_profile.dart';
 import 'package:mauritanie_news/shared/models/agency_model.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mauritanie_news/app/router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Tableau de bord agence (Supabase).
@@ -127,22 +132,24 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
     } catch (e) {
       debugPrint('AgencyDashboardScreen load error: $e');
       if (!mounted) return;
+      final l10n = context.agencyL10n;
       setState(() {
         _loading = false;
-        _errorMessage = 'Erreur lors du chargement des données : $e';
+        _errorMessage = '${l10n.t('load_error')} : $e';
       });
     }
   }
 
   Future<void> _openPublish() async {
     final agency = _agency;
+    final l10n = context.agencyL10n;
     if (agency == null || agency.id.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Profil agence introuvable',
+            l10n.t('profile_not_found'),
             style:
                 AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
@@ -151,8 +158,8 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
       return;
     }
     final created = await Navigator.of(context).push<bool>(
-      MaterialPageRoute<bool>(
-        builder: (_) => PublishArticleScreen(agency: agency),
+      agencyMaterialRoute<bool>(
+        PublishArticleScreen(agency: agency),
       ),
     );
     if (created == true && mounted) await _load();
@@ -162,8 +169,8 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
     final agency = _agency;
     if (agency == null) return;
     final updated = await Navigator.of(context).push<AgencyModel?>(
-      MaterialPageRoute(
-        builder: (_) => AgencyProfileScreen(agency: agency),
+      agencyMaterialRoute<AgencyModel?>(
+        AgencyProfileScreen(agency: agency),
       ),
     );
     if (updated != null && mounted) {
@@ -203,30 +210,31 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   }
 
   Future<void> _confirmLogout() async {
+    final l10n = context.agencyL10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: const RoundedRectangleBorder(borderRadius: AppRadius.cardRadius),
         title: Text(
-          'Déconnexion',
+          l10n.t('logout_confirm_title'),
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
         ),
         content: Text(
-          'Voulez-vous vraiment vous déconnecter ?',
+          l10n.t('logout_confirm_message'),
           style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: Text(
-              'Annuler',
+              l10n.t('cancel'),
               style: AppTextStyles.buttonMedium.copyWith(color: AppColors.textSecondary),
             ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
             child: Text(
-              'Déconnexion',
+              l10n.t('logout'),
               style: AppTextStyles.buttonMedium.copyWith(color: AppColors.error),
             ),
           ),
@@ -237,20 +245,18 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   }
 
   Future<void> _logout() async {
+    if (!mounted) return;
+    context.go(AppRoutes.agencyLogin);
     try {
       await AgencyAuthService(Supabase.instance.client).logout();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const AgencyLoginScreen()),
-        (route) => false,
-      );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('Logout error: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           backgroundColor: AppColors.error,
           content: Text(
-            'Erreur de déconnexion',
+            context.agencyL10n.t('logout_error'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -260,6 +266,8 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
+    final agencyLocale = ref.watch(agencyLocaleProvider);
     final visible = _visibleArticles;
 
     return Scaffold(
@@ -301,10 +309,11 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                 onPressed: () => _scaffoldKey.currentState?.openDrawer(),
               ),
               title: Text(
-                'Tableau de Bord',
+                l10n.t('dashboard_title'),
                 style: AppTextStyles.headlineMedium.copyWith(color: AppColors.textOnPrimary),
               ),
               actions: [
+                const AgencyLanguageSwitcher(compact: true),
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: _openPublish,
@@ -341,7 +350,7 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                   _buildStatsGrid(),
                   const SizedBox(height: AppSpacing.xxl),
                   Text(
-                    'Filtrer par catégorie',
+                    l10n.t('filter_category'),
                     style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -351,15 +360,14 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                       scrollDirection: Axis.horizontal,
                       children: [
                         _FilterChip(
-                          label: 'Tous',
+                          label: l10n.t('filter_all'),
                           selected: _filterCategoryId == null,
                           selectedColor: AppColors.primary,
                           onTap: () => setState(() => _filterCategoryId = null),
                         ),
                         ..._categories.map((c) {
                           final sel = _filterCategoryId == c.id;
-                          final locale =
-                              Localizations.localeOf(context);
+                          final locale = agencyLocale;
                           return _FilterChip(
                             label: '${c.icon} ${c.name(locale)}',
                             selected: sel,
@@ -398,7 +406,7 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                           style: AppTextStyles.bodyLarge),
                       const SizedBox(height: AppSpacing.md),
                       ElevatedButton(
-                          onPressed: _load, child: const Text('Réessayer')),
+                          onPressed: _load, child: Text(l10n.t('retry'))),
                     ],
                   ),
                 ),
@@ -442,8 +450,8 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
                       },
                       onEdit: () async {
                         final updated = await Navigator.of(context).push<bool>(
-                          MaterialPageRoute<bool>(
-                            builder: (_) => EditArticleScreen(
+                          agencyMaterialRoute<bool>(
+                            EditArticleScreen(
                               article: a,
                               categories: _categories,
                             ),
@@ -463,12 +471,13 @@ class _AgencyDashboardScreenState extends ConsumerState<AgencyDashboardScreen>
   }
 
   Widget _buildStatsGrid() {
+    final l10n = context.agencyL10n;
     final publishedCount = _articles.length;
     final stats = <({String title, String value, IconData icon, Color color})>[
-      (title: 'Articles publiés', value: '$publishedCount', icon: Icons.article_outlined, color: AppColors.primary),
-      (title: 'Total réactions', value: '—', icon: Icons.favorite_border, color: AppColors.accent),
-      (title: 'Vues estimées', value: '—', icon: Icons.visibility_outlined, color: AppColors.info),
-      (title: 'Ce mois-ci', value: '—', icon: Icons.trending_up, color: AppColors.success),
+      (title: l10n.t('stat_published'), value: '$publishedCount', icon: Icons.article_outlined, color: AppColors.primary),
+      (title: l10n.t('stat_reactions'), value: '—', icon: Icons.favorite_border, color: AppColors.accent),
+      (title: l10n.t('stat_views'), value: '—', icon: Icons.visibility_outlined, color: AppColors.info),
+      (title: l10n.t('stat_month'), value: '—', icon: Icons.trending_up, color: AppColors.success),
     ];
 
     return LayoutBuilder(

@@ -6,10 +6,10 @@ import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:gap/gap.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
+import 'package:mauritanie_news/features/agency/ui/agency_language_switch.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 import 'package:mauritanie_news/features/agency/data/agency_auth_service.dart';
-import 'package:mauritanie_news/features/agency/ui/agency_login_screen.dart';
-
 import 'package:go_router/go_router.dart';
 import 'package:mauritanie_news/app/router.dart';
 import 'package:mauritanie_news/shared/models/agency_model.dart';
@@ -52,34 +52,34 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
     super.dispose();
   }
 
-  String? _validateName(String? v) {
+  String? _validateName(String? v, AgencyLocalizations l10n) {
     final t = (v ?? '').trim();
-    if (t.length < 2) return 'Minimum 2 caractères';
+    if (t.length < 2) return l10n.t('min_2_chars');
     return null;
   }
 
-  String? _validateWebsite(String? v) {
+  String? _validateWebsite(String? v, AgencyLocalizations l10n) {
     final t = (v ?? '').trim();
-    if (!t.startsWith('https://')) return 'Le site doit commencer par https://';
+    if (!t.startsWith('https://')) return l10n.t('website_https');
     return null;
   }
 
-  String? _validateEmail(String? v) {
+  String? _validateEmail(String? v, AgencyLocalizations l10n) {
     final t = (v ?? '').trim();
-    if (t.isEmpty) return 'Email obligatoire';
+    if (t.isEmpty) return l10n.t('email_required');
     final ok = RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(t);
-    if (!ok) return 'Email invalide';
+    if (!ok) return l10n.t('email_invalid');
     return null;
   }
 
-  String? _validatePassword(String? v) {
+  String? _validatePassword(String? v, AgencyLocalizations l10n) {
     final t = v ?? '';
-    if (t.length < 8) return 'Minimum 8 caractères';
+    if (t.length < 8) return l10n.t('min_8_chars');
     return null;
   }
 
-  String? _validateConfirm(String? v) {
-    if ((v ?? '') != _passwordController.text) return 'Les mots de passe ne correspondent pas';
+  String? _validateConfirm(String? v, AgencyLocalizations l10n) {
+    if ((v ?? '') != _passwordController.text) return l10n.t('password_mismatch');
     return null;
   }
 
@@ -90,7 +90,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
         SnackBar(
           backgroundColor: AppColors.info,
           content: Text(
-            'Le logo depuis la galerie n’est pas disponible sur le web.',
+            context.agencyL10n.t('logo_web_unavailable'),
             style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textOnPrimary),
           ),
         ),
@@ -161,10 +161,10 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
     return AppColors.success;
   }
 
-  String _strengthLabel(double v) {
-    if (v < 0.4) return 'Faible';
-    if (v < 0.9) return 'Moyen';
-    return 'Fort';
+  String _strengthLabel(double v, AgencyLocalizations l10n) {
+    if (v < 0.4) return l10n.t('strength_weak');
+    if (v < 0.9) return l10n.t('strength_medium');
+    return l10n.t('strength_strong');
   }
 
   InputDecoration _decoration({
@@ -195,7 +195,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
 
   Future<void> _register() async {
     setState(() => _errorMessage = null);
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState?.validate() != true) return;
 
     setState(() => _isLoading = true);
 
@@ -215,33 +215,53 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
         documentFileExt: _docFileExt,
       );
 
-      await authService.login(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
-      );
+      if (!mounted) return;
+
+      // Connexion optionnelle (peut échouer si confirmation email requise).
+      try {
+        await authService.login(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+        );
+      } catch (loginError) {
+        debugPrint(
+          '[AgencyRegisterScreen] Connexion post-inscription ignorée: $loginError',
+        );
+      }
 
       if (!mounted) return;
-      
-      await showDialog(
+
+      final successL10n =
+          Localizations.of<AgencyLocalizations>(context, AgencyLocalizations) ??
+              AgencyLocalizations(const Locale('fr'));
+
+      await showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          title: const Row(
+        builder: (dialogContext) => AlertDialog(
+          title: Row(
             children: [
-              Icon(Icons.check_circle, color: AppColors.success),
-              SizedBox(width: AppSpacing.sm),
-              Text('Demande envoyée'),
+              const Icon(Icons.check_circle, color: AppColors.success),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                successL10n.t('register_success_title'),
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: AppColors.textOnPrimary,
+                ),
+              ),
             ],
           ),
-          content: const Text(
-            'Votre demande a été envoyée avec succès. Veuillez attendre la validation de l\'administrateur avant de pouvoir publier vos articles.',
-            style: AppTextStyles.bodyMedium,
+          content: Text(
+            successL10n.t('register_success_body'),
+            style: AppTextStyles.bodyMedium.copyWith(
+              color: AppColors.textOnPrimary,
+            ),
           ),
           actions: [
             ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () => Navigator.pop(dialogContext),
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-              child: const Text('Compris'),
+              child: Text(successL10n.t('understood')),
             ),
           ],
         ),
@@ -249,14 +269,15 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
 
       if (!mounted) return;
       context.go(AppRoutes.agencyPending);
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[AgencyRegisterScreen] Erreur inscription: $e\n$stack');
       if (!mounted) return;
-      // Handle the error message nicely
-      final msg = e.toString().replaceFirst('Exception: ', '');
-      setState(() => _errorMessage = msg);
-      
-      // We don't show the snackbar if we are showing the error box on screen
-      // but if the error is "None", we might want a generic one.
+      final msg = e is String
+          ? e
+          : e.toString().replaceFirst('Exception: ', '').trim();
+      setState(() => _errorMessage = msg.isEmpty
+          ? 'L\'inscription a échoué. Veuillez réessayer.'
+          : msg);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -264,6 +285,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
     final error = _errorMessage;
     final strength = _strength();
     final strengthColor = _strengthColor(strength);
@@ -274,9 +296,13 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.textOnPrimary,
         title: Text(
-          'Créer un compte Agence',
+          l10n.t('register_title'),
           style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textOnPrimary),
         ),
+        actions: const [
+          AgencyLanguageSwitcher(compact: true),
+          SizedBox(width: AppSpacing.sm),
+        ],
       ),
       body: SingleChildScrollView(
         padding: AppSpacing.pagePadding,
@@ -290,13 +316,13 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                   const Icon(Icons.business_center, color: AppColors.primary, size: 64),
                   const SizedBox(height: AppSpacing.md),
                   Text(
-                    'Rejoindre la plateforme',
+                    l10n.t('join_platform'),
                     style: AppTextStyles.headlineLarge.copyWith(color: AppColors.textPrimary),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Créez votre espace de publication et commencez à diffuser vos actualités',
+                    l10n.t('register_subtitle'),
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                     textAlign: TextAlign.center,
                   ),
@@ -304,44 +330,44 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.xxxl),
               Text(
-                'Informations de l’agence',
+                l10n.t('agency_info_section'),
                 style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _nameController,
                 decoration: _decoration(
-                  label: 'Nom de l’agence *',
+                  label: l10n.t('agency_name'),
                   icon: Icons.business_outlined,
-                  hint: 'Ex: Agence Mauritanie Presse',
+                  hint: l10n.t('agency_name_hint'),
                 ),
-                validator: _validateName,
+                validator: (v) => _validateName(v, l10n),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _websiteController,
                 keyboardType: TextInputType.url,
                 decoration: _decoration(
-                  label: 'Site web *',
+                  label: l10n.t('website'),
                   icon: Icons.language_outlined,
-                  hint: 'https://monagence.mr',
+                  hint: l10n.t('website_hint'),
                 ),
-                validator: _validateWebsite,
+                validator: (v) => _validateWebsite(v, l10n),
               ),
               const SizedBox(height: AppSpacing.lg),
               DropdownButtonFormField<MediaType>(
                 initialValue: _mediaType,
                 decoration: _decoration(
-                  label: 'Type de média',
+                  label: l10n.t('media_type'),
                   icon: Icons.category_outlined,
                 ),
-                items: const [
-                  DropdownMenuItem(value: MediaType.newsAgency, child: Row(children: [Icon(Icons.rss_feed_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Agence de presse')])),
-                  DropdownMenuItem(value: MediaType.newspaper, child: Row(children: [Icon(Icons.newspaper_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Presse écrite')])),
-                  DropdownMenuItem(value: MediaType.blog, child: Row(children: [Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Blog')])),
-                  DropdownMenuItem(value: MediaType.tvChannel, child: Row(children: [Icon(Icons.tv_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Télévision')])),
-                  DropdownMenuItem(value: MediaType.radio, child: Row(children: [Icon(Icons.radio_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Radio')])),
-                  DropdownMenuItem(value: MediaType.other, child: Row(children: [Icon(Icons.more_horiz_rounded, size: 18, color: AppColors.primary), Gap(AppSpacing.sm), Text('Autre')])),
+                items: [
+                  DropdownMenuItem(value: MediaType.newsAgency, child: Row(children: [const Icon(Icons.rss_feed_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_news_agency'))])),
+                  DropdownMenuItem(value: MediaType.newspaper, child: Row(children: [const Icon(Icons.newspaper_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_newspaper'))])),
+                  DropdownMenuItem(value: MediaType.blog, child: Row(children: [const Icon(Icons.edit_note_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_blog'))])),
+                  DropdownMenuItem(value: MediaType.tvChannel, child: Row(children: [const Icon(Icons.tv_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_tv'))])),
+                  DropdownMenuItem(value: MediaType.radio, child: Row(children: [const Icon(Icons.radio_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_radio'))])),
+                  DropdownMenuItem(value: MediaType.other, child: Row(children: [const Icon(Icons.more_horiz_rounded, size: 18, color: AppColors.primary), const Gap(AppSpacing.sm), Text(l10n.t('media_other'))])),
                 ],
                 onChanged: (v) {
                   if (v == null) return;
@@ -350,7 +376,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Logo (optionnel)',
+                l10n.t('logo_optional'),
                 style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -361,7 +387,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                       onPressed: kIsWeb ? null : _pickLogo,
                       icon: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
                       label: Text(
-                        'Choisir un logo',
+                        l10n.t('pick_logo'),
                         style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
                       ),
                       style: OutlinedButton.styleFrom(
@@ -375,7 +401,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                     IconButton(
                       onPressed: _clearLogo,
                       icon: const Icon(Icons.close, color: AppColors.error),
-                      tooltip: 'Retirer le logo',
+                      tooltip: l10n.t('remove_logo'),
                     ),
                   ],
                 ],
@@ -397,7 +423,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
               ],
               const SizedBox(height: AppSpacing.lg),
               Text(
-                'Document justificatif (PDF ou Image) *',
+                l10n.t('document_section'),
                 style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -408,7 +434,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                       onPressed: _isLoading ? null : _pickDocument,
                       icon: const Icon(Icons.upload_file, color: AppColors.primary),
                       label: Text(
-                        _docFileName ?? 'Choisir un document',
+                        _docFileName ?? l10n.t('pick_document'),
                         style: AppTextStyles.buttonMedium.copyWith(color: AppColors.primary),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -423,7 +449,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                     IconButton(
                       onPressed: _clearDocument,
                       icon: const Icon(Icons.close, color: AppColors.error),
-                      tooltip: 'Retirer le document',
+                      tooltip: l10n.t('remove_document'),
                     ),
                   ],
                 ],
@@ -432,7 +458,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
               const Divider(color: AppColors.border),
               const SizedBox(height: AppSpacing.xl),
               Text(
-                'Informations de connexion',
+                l10n.t('account_section'),
                 style: AppTextStyles.labelLarge.copyWith(color: AppColors.textSecondary),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -440,10 +466,10 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: _decoration(
-                  label: 'Email professionnel *',
+                  label: l10n.t('professional_email'),
                   icon: Icons.email_outlined,
                 ),
-                validator: _validateEmail,
+                validator: (v) => _validateEmail(v, l10n),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
@@ -451,9 +477,9 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                 obscureText: _obscure1,
                 onChanged: (_) => setState(() {}),
                 decoration: _decoration(
-                  label: 'Mot de passe *',
+                  label: '${l10n.t('password')} *',
                   icon: Icons.lock_outlined,
-                  helper: 'Minimum 8 caractères',
+                  helper: l10n.t('min_8_chars'),
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure1 = !_obscure1),
                     icon: Icon(
@@ -462,14 +488,14 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                     ),
                   ),
                 ),
-                validator: _validatePassword,
+                validator: (v) => _validatePassword(v, l10n),
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
                 controller: _confirmController,
                 obscureText: _obscure2,
                 decoration: _decoration(
-                  label: 'Confirmer mot de passe *',
+                  label: l10n.t('confirm_password'),
                   icon: Icons.lock_outlined,
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure2 = !_obscure2),
@@ -479,7 +505,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                     ),
                   ),
                 ),
-                validator: _validateConfirm,
+                validator: (v) => _validateConfirm(v, l10n),
               ),
               const SizedBox(height: AppSpacing.xxl),
               Column(
@@ -493,7 +519,8 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Force du mot de passe : ${_strengthLabel(strength)}',
+                    l10n.tf('password_strength',
+                        params: {'level': _strengthLabel(strength, l10n)}),
                     style: AppTextStyles.labelMedium.copyWith(color: strengthColor),
                   ),
                 ],
@@ -546,7 +573,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                           ),
                         )
                       : Text(
-                          'Créer mon compte',
+                          l10n.t('create_my_account'),
                           style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
                         ),
                 ),
@@ -566,7 +593,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
-                        'Votre compte sera examiné par notre équipe. Vous pourrez publier dès validation.',
+                        l10n.t('register_review_note'),
                         style: AppTextStyles.bodySmall.copyWith(color: AppColors.info),
                       ),
                     ),
@@ -578,18 +605,13 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Déjà un compte ? ',
+                    '${l10n.t('already_account')} ',
                     style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                   ),
                   TextButton(
-                    onPressed: () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const AgencyLoginScreen()),
-                      );
-                    },
+                    onPressed: () => context.go(AppRoutes.agencyLogin),
                     child: Text(
-                      'Se connecter',
+                      l10n.t('sign_in'),
                       style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
                     ),
                   ),

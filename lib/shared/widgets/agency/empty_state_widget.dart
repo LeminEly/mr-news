@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 /// État vide lorsqu’aucun article n’est affiché (animation Flutter pure).
@@ -24,7 +25,7 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
+        duration: const Duration(seconds: 3),
     )..repeat();
   }
 
@@ -36,6 +37,8 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxxl),
       child: Column(
@@ -53,15 +56,17 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(
-            'Aucun article publié',
+            l10n.t('empty_published'),
             textAlign: TextAlign.center,
-            style: AppTextStyles.headlineSmall.copyWith(color: AppColors.textPrimary),
+            style: AppTextStyles.headlineSmall
+                .copyWith(color: AppColors.textPrimary),
           ),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Commencez par publier votre premier article',
+            l10n.t('empty_publish_hint'),
             textAlign: TextAlign.center,
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.bodyMedium
+                .copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.xxl),
           SizedBox(
@@ -70,14 +75,16 @@ class _EmptyStateWidgetState extends State<EmptyStateWidget>
               onPressed: widget.onPublishPressed,
               icon: const Icon(Icons.add, color: AppColors.textOnPrimary),
               label: Text(
-                '✚ Publier maintenant',
-                style: AppTextStyles.buttonLarge.copyWith(color: AppColors.textOnPrimary),
+                l10n.t('publish_now'),
+                style: AppTextStyles.buttonLarge
+                    .copyWith(color: AppColors.textOnPrimary),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: AppColors.textOnPrimary,
                 minimumSize: const Size.fromHeight(52),
-                shape: const RoundedRectangleBorder(borderRadius: AppRadius.buttonRadius),
+                shape: const RoundedRectangleBorder(
+                    borderRadius: AppRadius.buttonRadius),
               ),
             ),
           ),

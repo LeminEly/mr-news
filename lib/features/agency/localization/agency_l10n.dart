@@ -1,0 +1,378 @@
+import 'package:flutter/material.dart';
+
+/// Traductions FR / AR — espace agence uniquement.
+class AgencyLocalizations {
+  AgencyLocalizations(this.locale);
+
+  final Locale locale;
+
+  static AgencyLocalizations of(BuildContext context) {
+    return Localizations.of<AgencyLocalizations>(context, AgencyLocalizations)!;
+  }
+
+  static const LocalizationsDelegate<AgencyLocalizations> delegate =
+      _AgencyLocalizationsDelegate();
+
+  bool get isAr => locale.languageCode == 'ar';
+
+  TextDirection get textDirection =>
+      isAr ? TextDirection.rtl : TextDirection.ltr;
+
+  String t(String key) =>
+      _values[locale.languageCode]?[key] ?? _values['fr']![key] ?? key;
+
+  String tf(String key, {Map<String, String> params = const {}}) {
+    var s = t(key);
+    for (final e in params.entries) {
+      s = s.replaceAll('{${e.key}}', e.value);
+    }
+    return s;
+  }
+
+  static const Map<String, Map<String, String>> _values = {
+    'fr': {
+      'language': 'Langue',
+      'back_to_feed': 'Retour au fil d\'actualité',
+      'agency_login_title': 'Connexion Agence',
+      'agency_space': 'Espace Agence',
+      'agency_login_subtitle': 'Connectez-vous pour gérer vos articles',
+      'email': 'Adresse email',
+      'password': 'Mot de passe',
+      'email_required': 'Email obligatoire',
+      'email_invalid': 'Email invalide',
+      'password_min': 'Minimum 6 caractères',
+      'forgot_password': 'Mot de passe oublié ?',
+      'coming_soon': 'Fonctionnalité bientôt disponible',
+      'login': 'Se connecter',
+      'login_success': 'Connexion réussie',
+      'no_account': 'Pas encore de compte ?',
+      'register': 'S\'inscrire',
+      'dashboard': 'Tableau de bord',
+      'dashboard_title': 'Tableau de Bord',
+      'publish_article': 'Publier un article',
+      'my_profile': 'Mon Profil',
+      'logout': 'Déconnexion',
+      'logout_confirm_title': 'Déconnexion',
+      'logout_confirm_message': 'Voulez-vous vraiment vous déconnecter ?',
+      'cancel': 'Annuler',
+      'logout_error': 'Erreur de déconnexion',
+      'profile_not_found': 'Profil agence introuvable',
+      'load_error': 'Erreur lors du chargement des données',
+      'retry': 'Réessayer',
+      'filter_category': 'Filtrer par catégorie',
+      'filter_all': 'Tous',
+      'stat_published': 'Articles publiés',
+      'stat_reactions': 'Total réactions',
+      'stat_views': 'Vues estimées',
+      'stat_month': 'Ce mois-ci',
+      'status_approved': 'Approuvée',
+      'status_pending': 'En attente',
+      'status_rejected': 'Rejetée',
+      'status_suspended': 'Suspendue',
+      'validation_title': 'Validation en cours',
+      'validation_body':
+          'Votre demande d\'inscription est en attente de validation par un administrateur. Vous recevrez un accès complet dès que votre compte sera approuvé.',
+      'check_again': 'Vérifier à nouveau',
+      'loading_space': 'Chargement de votre espace...',
+      'register_title': 'Créer un compte Agence',
+      'register_submit': 'Envoyer la demande',
+      'register_success_title': 'Demande envoyée',
+      'register_success_body':
+          'Votre demande a été envoyée avec succès. Veuillez attendre la validation de l\'administrateur avant de pouvoir publier vos articles.',
+      'understood': 'Compris',
+      'already_account': 'Déjà un compte ?',
+      'sign_in': 'Se connecter',
+      'delete_article_title': 'Supprimer l\'article ?',
+      'delete_article_body':
+          'Cette action est irréversible. L\'article « {title} » sera définitivement supprimé.',
+      'delete': 'Supprimer',
+      'delete_success': 'Article supprimé',
+      'delete_error': 'Erreur lors de la suppression',
+      'edit': 'Modifier',
+      'empty_articles': 'Aucun article pour le moment',
+      'empty_articles_hint': 'Publiez votre premier article pour commencer.',
+      'create_account': 'Créer un compte',
+      'sign_out': 'Se déconnecter',
+      'empty_published': 'Aucun article publié',
+      'empty_publish_hint': 'Commencez par publier votre premier article',
+      'publish_now': 'Publier maintenant',
+      'account_rejected': 'Votre compte a été refusé par l\'administration.',
+      'account_suspended': 'Votre compte est suspendu.',
+      'join_platform': 'Rejoindre la plateforme',
+      'register_subtitle':
+          'Créez votre espace de publication et commencez à diffuser vos actualités',
+      'agency_info_section': 'Informations de l\'agence',
+      'agency_name': 'Nom de l\'agence *',
+      'agency_name_hint': 'Ex: Agence Mauritanie Presse',
+      'website': 'Site web *',
+      'website_hint': 'https://monagence.mr',
+      'media_type': 'Type de média',
+      'media_news_agency': 'Agence de presse',
+      'media_newspaper': 'Presse écrite',
+      'media_blog': 'Blog',
+      'media_tv': 'Télévision',
+      'media_radio': 'Radio',
+      'media_other': 'Autre',
+      'account_section': 'Identifiants de connexion',
+      'confirm_password': 'Confirmer le mot de passe *',
+      'min_2_chars': 'Minimum 2 caractères',
+      'website_https': 'Le site doit commencer par https://',
+      'password_mismatch': 'Les mots de passe ne correspondent pas',
+      'min_8_chars': 'Minimum 8 caractères',
+      'strength_weak': 'Faible',
+      'strength_medium': 'Moyen',
+      'strength_strong': 'Fort',
+      'logo_section': 'Logo de l\'agence',
+      'pick_logo': 'Choisir un logo',
+      'document_section': 'Document justificatif *',
+      'pick_document': 'Choisir un document (PDF, JPG, PNG)',
+      'logo_web_unavailable':
+          'Le logo depuis la galerie n\'est pas disponible sur le web.',
+      'from_gallery': 'Depuis la galerie',
+      'from_url': 'Depuis une URL',
+      'image_url': 'URL de l\'image',
+      'confirm_btn': 'Confirmer',
+      'upload_in_progress': 'Upload en cours…',
+      'add_cover_image': 'Ajouter une image de couverture',
+      'gallery_or_url': 'Galerie ou URL',
+      'cover_image': 'Image de couverture',
+      'categories_load_error': 'Erreur de chargement des catégories',
+      'select_category': 'Sélectionnez une catégorie',
+      'title_url_required': 'Titre et lien source sont obligatoires',
+      'article_published_success': 'Article publié avec succès !',
+      'upload_image_error': 'Erreur upload image',
+      'gallery_web_unavailable': 'La galerie n\'est pas disponible sur le web.',
+      'pending_publish':
+          'Votre agence est en attente de validation. Vous pourrez publier après approbation.',
+      'edit_article': 'Modifier l\'article',
+      'modified_badge': 'Modifié',
+      'last_modified': 'Dernière modification : {date}',
+      'changes_saved': 'Modifications enregistrées',
+      'update_error': 'Erreur lors de la mise à jour',
+      'profile_title': 'Mon profil',
+      'profile_info': 'Informations',
+      'website_label': 'Site web',
+      'reject_reason': 'Motif (rejet)',
+      'account_created': 'Compte créé le',
+      'validated_at': 'Validé le',
+      'change_logo_hint':
+          'Appuyez sur l\'icône appareil photo pour changer le logo.',
+      'logo_updated': 'Logo mis à jour',
+      'logo_upload_failed': 'Échec du téléversement',
+      'main_info': 'Informations principales',
+      'article_title': 'Titre de l\'article *',
+      'article_title_hint': 'Entrez un titre accrocheur…',
+      'article_url': 'URL de l\'article *',
+      'article_url_hint': 'https://votre-site.mr/article…',
+      'preview_empty': '(vide)',
+      'preview_label': 'Aperçu : {url}',
+      'choose_image': 'Choisir une image',
+      'classification': 'Classification',
+      'article_language_fr': 'Français',
+      'article_language_ar': 'العربية',
+      'live_preview': 'Aperçu temps réel',
+      'save_changes': 'Sauvegarder les modifications',
+      'publish_article_btn': 'Publier l\'article',
+      'article_title_placeholder': 'Titre de l\'article…',
+      'min_3_chars': 'Minimum 3 caractères',
+      'url_https': 'L\'URL doit commencer par https://',
+      'image_from_url': 'Image depuis une URL',
+      'phone_upload_unavailable':
+          'Envoi de l\'image depuis le téléphone n\'est pas disponible.',
+      'image_upload_error': 'Erreur envoi image',
+      'logo_optional': 'Logo (optionnel)',
+      'remove_logo': 'Retirer le logo',
+      'remove_document': 'Retirer le document',
+      'professional_email': 'Email professionnel *',
+      'password_strength': 'Force du mot de passe : {level}',
+      'create_my_account': 'Créer mon compte',
+      'field_name': 'Nom',
+      'field_email': 'E-mail',
+      'field_status': 'Statut',
+      'register_review_note':
+          'Votre compte sera examiné par notre équipe. Vous pourrez publier dès validation.',
+    },
+    'ar': {
+      'language': 'اللغة',
+      'back_to_feed': 'العودة إلى الأخبار',
+      'agency_login_title': 'تسجيل دخول الوكالة',
+      'agency_space': 'مساحة الوكالة',
+      'agency_login_subtitle': 'سجّل الدخول لإدارة مقالاتك',
+      'email': 'البريد الإلكتروني',
+      'password': 'كلمة المرور',
+      'email_required': 'البريد الإلكتروني مطلوب',
+      'email_invalid': 'بريد إلكتروني غير صالح',
+      'password_min': '6 أحرف على الأقل',
+      'forgot_password': 'نسيت كلمة المرور؟',
+      'coming_soon': 'الميزة قريباً',
+      'login': 'تسجيل الدخول',
+      'login_success': 'تم تسجيل الدخول بنجاح',
+      'no_account': 'ليس لديك حساب؟',
+      'register': 'التسجيل',
+      'dashboard': 'لوحة التحكم',
+      'dashboard_title': 'لوحة التحكم',
+      'publish_article': 'نشر مقال',
+      'my_profile': 'ملفي',
+      'logout': 'تسجيل الخروج',
+      'logout_confirm_title': 'تسجيل الخروج',
+      'logout_confirm_message': 'هل تريد حقاً تسجيل الخروج؟',
+      'cancel': 'إلغاء',
+      'logout_error': 'خطأ أثناء تسجيل الخروج',
+      'profile_not_found': 'ملف الوكالة غير موجود',
+      'load_error': 'خطأ أثناء تحميل البيانات',
+      'retry': 'إعادة المحاولة',
+      'filter_category': 'تصفية حسب الفئة',
+      'filter_all': 'الكل',
+      'stat_published': 'مقالات منشورة',
+      'stat_reactions': 'إجمالي التفاعلات',
+      'stat_views': 'مشاهدات تقديرية',
+      'stat_month': 'هذا الشهر',
+      'status_approved': 'معتمدة',
+      'status_pending': 'قيد الانتظار',
+      'status_rejected': 'مرفوضة',
+      'status_suspended': 'موقوفة',
+      'validation_title': 'التحقق جارٍ',
+      'validation_body':
+          'طلب تسجيلك قيد المراجعة من قبل المسؤول. ستحصل على وصول كامل فور الموافقة على حسابك.',
+      'check_again': 'تحقق مرة أخرى',
+      'loading_space': 'جاري تحميل مساحتك...',
+      'register_title': 'إنشاء حساب وكالة',
+      'register_submit': 'إرسال الطلب',
+      'register_success_title': 'تم إرسال الطلب',
+      'register_success_body':
+          'تم إرسال طلبك بنجاح. يرجى انتظار موافقة المسؤول قبل نشر مقالاتك.',
+      'understood': 'فهمت',
+      'already_account': 'لديك حساب بالفعل؟',
+      'sign_in': 'تسجيل الدخول',
+      'delete_article_title': 'حذف المقال؟',
+      'delete_article_body':
+          'هذا الإجراء لا رجعة فيه. سيتم حذف المقال « {title} » نهائياً.',
+      'delete': 'حذف',
+      'delete_success': 'تم حذف المقال',
+      'delete_error': 'خطأ أثناء الحذف',
+      'edit': 'تعديل',
+      'empty_articles': 'لا توجد مقالات حالياً',
+      'empty_articles_hint': 'انشر مقالك الأول للبدء.',
+      'create_account': 'إنشاء حساب',
+      'sign_out': 'تسجيل الخروج',
+      'empty_published': 'لا توجد مقالات منشورة',
+      'empty_publish_hint': 'ابدأ بنشر مقالك الأول',
+      'publish_now': 'انشر الآن',
+      'account_rejected': 'تم رفض حسابك من قبل الإدارة.',
+      'account_suspended': 'حسابك موقوف.',
+      'join_platform': 'انضم إلى المنصة',
+      'register_subtitle':
+          'أنشئ مساحة النشر الخاصة بك وابدأ ببث أخبارك',
+      'agency_info_section': 'معلومات الوكالة',
+      'agency_name': 'اسم الوكالة *',
+      'agency_name_hint': 'مثال: وكالة موريتانيا برس',
+      'website': 'الموقع الإلكتروني *',
+      'website_hint': 'https://wakalati.mr',
+      'media_type': 'نوع الوسيط',
+      'media_news_agency': 'وكالة أنباء',
+      'media_newspaper': 'صحافة مكتوبة',
+      'media_blog': 'مدونة',
+      'media_tv': 'تلفزيون',
+      'media_radio': 'إذاعة',
+      'media_other': 'أخرى',
+      'account_section': 'بيانات تسجيل الدخول',
+      'confirm_password': 'تأكيد كلمة المرور *',
+      'min_2_chars': 'حرفان على الأقل',
+      'website_https': 'يجب أن يبدأ الموقع بـ https://',
+      'password_mismatch': 'كلمتا المرور غير متطابقتين',
+      'min_8_chars': '8 أحرف على الأقل',
+      'strength_weak': 'ضعيفة',
+      'strength_medium': 'متوسطة',
+      'strength_strong': 'قوية',
+      'logo_section': 'شعار الوكالة',
+      'pick_logo': 'اختيار شعار',
+      'document_section': 'وثيقة إثبات *',
+      'pick_document': 'اختيار وثيقة (PDF, JPG, PNG)',
+      'logo_web_unavailable':
+          'اختيار الشعار من المعرض غير متاح على الويب.',
+      'from_gallery': 'من المعرض',
+      'from_url': 'من رابط',
+      'image_url': 'رابط الصورة',
+      'confirm_btn': 'تأكيد',
+      'upload_in_progress': 'جاري الرفع…',
+      'add_cover_image': 'إضافة صورة غلاف',
+      'gallery_or_url': 'معرض أو رابط',
+      'cover_image': 'صورة الغلاف',
+      'categories_load_error': 'خطأ في تحميل الفئات',
+      'select_category': 'اختر فئة',
+      'title_url_required': 'العنوان ورابط المصدر مطلوبان',
+      'article_published_success': 'تم نشر المقال بنجاح!',
+      'upload_image_error': 'خطأ في رفع الصورة',
+      'gallery_web_unavailable': 'المعرض غير متاح على الويب.',
+      'pending_publish':
+          'وكالتك قيد التحقق. يمكنك النشر بعد الموافقة.',
+      'edit_article': 'تعديل المقال',
+      'modified_badge': 'معدّل',
+      'last_modified': 'آخر تعديل : {date}',
+      'changes_saved': 'تم حفظ التعديلات',
+      'update_error': 'خطأ أثناء التحديث',
+      'profile_title': 'ملفي',
+      'profile_info': 'معلومات',
+      'website_label': 'الموقع',
+      'reject_reason': 'سبب الرفض',
+      'account_created': 'تاريخ إنشاء الحساب',
+      'validated_at': 'تاريخ الاعتماد',
+      'change_logo_hint': 'اضغط على أيقونة الكاميرا لتغيير الشعار.',
+      'logo_updated': 'تم تحديث الشعار',
+      'logo_upload_failed': 'فشل الرفع',
+      'main_info': 'المعلومات الرئيسية',
+      'article_title': 'عنوان المقال *',
+      'article_title_hint': 'أدخل عنواناً جذاباً…',
+      'article_url': 'رابط المقال *',
+      'article_url_hint': 'https://site.mr/article…',
+      'preview_empty': '(فارغ)',
+      'preview_label': 'معاينة : {url}',
+      'choose_image': 'اختيار صورة',
+      'classification': 'التصنيف',
+      'article_language_fr': 'Français',
+      'article_language_ar': 'العربية',
+      'live_preview': 'معاينة مباشرة',
+      'save_changes': 'حفظ التعديلات',
+      'publish_article_btn': 'نشر المقال',
+      'article_title_placeholder': 'عنوان المقال…',
+      'min_3_chars': '3 أحرف على الأقل',
+      'url_https': 'يجب أن يبدأ الرابط بـ https://',
+      'image_from_url': 'صورة من رابط',
+      'phone_upload_unavailable':
+          'إرسال الصورة من الهاتف غير متاح.',
+      'image_upload_error': 'خطأ في إرسال الصورة',
+      'logo_optional': 'الشعار (اختياري)',
+      'remove_logo': 'إزالة الشعار',
+      'remove_document': 'إزالة الوثيقة',
+      'professional_email': 'البريد المهني *',
+      'password_strength': 'قوة كلمة المرور : {level}',
+      'create_my_account': 'إنشاء حسابي',
+      'field_name': 'الاسم',
+      'field_email': 'البريد الإلكتروني',
+      'field_status': 'الحالة',
+      'register_review_note':
+          'سيتم مراجعة حسابك من قبل فريقنا. يمكنك النشر بعد الموافقة.',
+    },
+  };
+}
+
+class _AgencyLocalizationsDelegate
+    extends LocalizationsDelegate<AgencyLocalizations> {
+  const _AgencyLocalizationsDelegate();
+
+  @override
+  bool isSupported(Locale locale) =>
+      locale.languageCode == 'fr' || locale.languageCode == 'ar';
+
+  @override
+  Future<AgencyLocalizations> load(Locale locale) async {
+    return AgencyLocalizations(locale);
+  }
+
+  @override
+  bool shouldReload(_AgencyLocalizationsDelegate old) => true;
+}
+
+extension AgencyL10nContext on BuildContext {
+  AgencyLocalizations get agencyL10n => AgencyLocalizations.of(this);
+}

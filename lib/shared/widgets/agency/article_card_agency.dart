@@ -2,9 +2,11 @@ import 'dart:ui' as ui;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
+import 'package:mauritanie_news/features/agency/localization/agency_l10n.dart';
 import 'package:mauritanie_news/shared/theme/app_theme.dart';
 
 import 'package:mauritanie_news/shared/widgets/agency/delete_confirm_dialog.dart';
@@ -76,6 +78,7 @@ class ArticleCardAgency extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.agencyL10n;
     final cover = article.coverImageUrl;
 
     final categoryLocale = Locale(article.language.name);
@@ -200,25 +203,40 @@ class ArticleCardAgency extends StatelessWidget {
                           onPressed: onEdit,
                           icon: const Icon(Icons.edit_outlined, size: 18, color: AppColors.primary),
                           label: Text(
-                            'Modifier',
+                            l10n.t('edit'),
                             style: AppTextStyles.labelLarge.copyWith(color: AppColors.primary),
                           ),
                         ),
                         const Spacer(),
                         TextButton.icon(
                           onPressed: () async {
+                            final parentL10n =
+                                Localizations.of<AgencyLocalizations>(
+                                      context,
+                                      AgencyLocalizations,
+                                    ) ??
+                                    AgencyLocalizations(const Locale('fr'));
                             final confirmed = await showDialog<bool>(
                               context: context,
-                              builder: (_) => DeleteConfirmDialog(
-                                articleId: article.id,
-                                articleTitle: article.title,
+                              builder: (dialogContext) => Localizations(
+                                locale: parentL10n.locale,
+                                delegates: const [
+                                  AgencyLocalizations.delegate,
+                                  GlobalMaterialLocalizations.delegate,
+                                  GlobalWidgetsLocalizations.delegate,
+                                  GlobalCupertinoLocalizations.delegate,
+                                ],
+                                child: DeleteConfirmDialog(
+                                  articleId: article.id,
+                                  articleTitle: article.title,
+                                ),
                               ),
                             );
                             if (confirmed == true) onDeleted();
                           },
                           icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.error),
                           label: Text(
-                            'Supprimer',
+                            l10n.t('delete'),
                             style: AppTextStyles.labelLarge.copyWith(color: AppColors.error),
                           ),
                         ),

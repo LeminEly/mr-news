@@ -98,7 +98,14 @@ class AgencyRepository {
         email: email,
         password: password,
       );
-      return getCurrentAgency();
+      final agency = await getCurrentAgency();
+      if (agency == null) {
+        throw const AgencyRepositoryException(
+          code: 'NOT_FOUND',
+          message: 'Profil agence introuvable.',
+        );
+      }
+      return agency;
     } on AuthException catch (error) {
       throw AgencyRepositoryException(
           code: error.statusCode ?? 'AUTH_ERROR',
@@ -111,13 +118,10 @@ class AgencyRepository {
 
   Future<void> signOut() => _client.auth.signOut();
   
-  Future<AgencyModel> getCurrentAgency() async {
+  Future<AgencyModel?> getCurrentAgency() async {
     final user = currentUser;
     if (user == null) {
-      throw const AgencyRepositoryException(
-        code: 'UNAUTHENTICATED',
-        message: 'Aucune session active.',
-      );
+      return null;
     }
 
     try {
@@ -126,22 +130,19 @@ class AgencyRepository {
           .select()
           .eq('auth_user_id', user.id)
           .maybeSingle();
-      
+
       if (data == null) {
         debugPrint('Agency profile not found for user ${user.id}');
-        throw const AgencyRepositoryException(
-          code: 'NOT_FOUND',
-          message: 'Profil agence introuvable. Votre compte est peut-être en cours de création.',
-        );
+        return null;
       }
-      
+
       return AgencyModel.fromSupabase(data);
     } on PostgrestException catch (error) {
       debugPrint('PostgrestException in getCurrentAgency: ${error.message}');
-      throw _mapPostgrestError(error);
+      return null;
     } catch (e) {
-      debugPrint('Unexpected error in getCurrentAgency: $e');
-      rethrow;
+      debugPrint('getCurrentAgency error: $e');
+      return null;
     }
   }
 
