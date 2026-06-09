@@ -3,6 +3,7 @@ import '../../../core/constants/app_constants.dart';
 import '../../../core/errors/app_error.dart';
 import '../../../shared/models/article_model.dart';
 import '../../../shared/models/category_model.dart';
+import 'dart:async';
 
 class FeedRepository {
   FeedRepository(this._supabase);
@@ -46,7 +47,6 @@ class FeedRepository {
           .gte('published_at', startOfDay.toIso8601String())
           .lt('published_at', endOfDay.toIso8601String());
 
-      // Curseur pour la pagination
       if (lastPublishedAt != null) {
         query = query.lt('published_at', lastPublishedAt.toIso8601String());
       }
@@ -122,5 +122,48 @@ class FeedRepository {
         .gte('published_at', startOfDay.toIso8601String())
         .order('published_at', ascending: false)
         .map((list) => list.map((e) => ArticleModel.fromJson(e)).toList());
+  }
+
+  // Pour le service de notifications : nouveaux articles uniquement
+  Stream<ArticleModel> watchNewArticles() {
+    final controller = StreamController<ArticleModel>();
+
+    final channel = _supabase.channel('new-articles');
+
+    channel.onPostgresChanges(
+      event: PostgresChangeEvent.insert,
+      schema: 'public',
+      table: 'articles',
+      callback: (payload) {
+        print('INSERT reçu: ${payload.newRecord}');
+        try {
+          final data = Map<String, dynamic>.from(payload.newRecord);
+
+          // Champs optionnels absents de la table brute
+          data['agency_name'] ??= null;
+          data['agency_logo_url'] ??= null;
+          data['agency_website'] ??= null;
+          data['category_name_ar'] ??= null;
+          data['category_name_fr'] ??= null;
+          data['category_icon'] ??= null;
+          data['category_color'] ??= null;
+          data['created_at'] ??= data['published_at'];
+          data['updated_at'] ??= data['published_at'];
+          data['reaction_counts'] ??= <String, dynamic>{};
+
+          controller.add(ArticleModel.fromJson(data));
+        } catch (e) {
+          print('ERREUR watchNewArticles fromJson: $e');
+        }
+      },
+    );
+
+    channel.subscribe();
+
+    controller.onCancel = () {
+      _supabase.removeChannel(channel);
+    };
+
+    return controller.stream;
   }
 }

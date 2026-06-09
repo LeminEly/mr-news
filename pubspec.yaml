@@ -16,6 +16,10 @@ dependencies:
   # BACKEND
   supabase_flutter: ^2.5.0
 
+
+  # Notifications management
+  flutter_local_notifications: ^17.2.2
+
   # STATE MANAGEMENT
   flutter_riverpod: ^2.5.1
   riverpod_annotation: ^2.3.5
