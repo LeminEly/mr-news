@@ -28,6 +28,7 @@ import '../features/admin/ui/articles_management.dart';
 import '../features/webview/ui/article_webview_screen.dart';
 import '../features/auth/ui/unified_auth_screen.dart';
 import '../features/auth/ui/auth_home_screen.dart';
+import '../features/auth/ui/reset_password_screen.dart';
 import '../features/feed/ui/splash_screen.dart';
 
 class AppRoutes {
@@ -53,6 +54,7 @@ class AppRoutes {
   static const String adminArticles = '/admin/articles';
   static const String adminLogin = '/admin/login';
   static const String adminAgencyDetails = '/admin/agency-details';
+  static const String resetPassword = '/auth/reset-password';
 }
 
 // Global flag to allow test admin login without Supabase backend dependency
@@ -94,6 +96,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           location == AppRoutes.onboarding ||
           location == AppRoutes.articleWebView ||
           location == AppRoutes.splash ||
+          location == AppRoutes.resetPassword ||
           location == '/auth-unified') {
         return null;
       }
@@ -118,6 +121,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/auth-unified',
         name: 'auth-unified',
         builder: (context, state) => const UnifiedAuthScreen(),
+      ),
+
+      // Reset password (OTP flow — admin & agency)
+      GoRoute(
+        path: AppRoutes.resetPassword,
+        name: 'reset-password',
+        builder: (context, state) =>
+            ResetPasswordScreen(initialEmail: state.extra as String?),
       ),
 
       // Splash

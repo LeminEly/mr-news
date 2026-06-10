@@ -178,7 +178,17 @@ class _AdminLoginViewState extends ConsumerState<_AdminLoginView> {
               ),
               validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
             ),
-            const SizedBox(height: AppSpacing.xl),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () => context.push(
+                  AppRoutes.resetPassword,
+                  extra: _emailController.text.trim(),
+                ),
+                child: Text(context.l10n.translate('forgot_password')),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
             if (_errorMessage != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
@@ -305,7 +315,17 @@ class _AgencyLoginSectionState extends ConsumerState<_AgencyLoginSection> {
             decoration: InputDecoration(labelText: context.l10n.translate('password'), prefixIcon: const Icon(Icons.lock_outline)),
             validator: (v) => (v == null || v.isEmpty) ? context.l10n.translate('required_field') : null,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: TextButton(
+              onPressed: () => context.push(
+                AppRoutes.resetPassword,
+                extra: _emailController.text.trim(),
+              ),
+              child: Text(context.l10n.translate('forgot_password')),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (_errorMessage != null)
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.md),
