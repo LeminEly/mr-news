@@ -24,7 +24,7 @@ class FeedRepository {
           .limit(AppConstants.feedPageSize);
 
       return (response as List)
-          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => ArticleModel.fromSupabaseJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppError.fromSupabase(e);
@@ -56,7 +56,7 @@ class FeedRepository {
           .limit(AppConstants.feedPageSize);
 
       return (response as List)
-          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => ArticleModel.fromSupabaseJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppError.fromSupabase(e);
@@ -87,7 +87,24 @@ class FeedRepository {
           .limit(AppConstants.feedPageSize);
 
       return (response as List)
-          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => ArticleModel.fromSupabaseJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw AppError.fromSupabase(e);
+    }
+  }
+
+  // Obtenir les articles les plus récents sans filtre de date
+  Future<List<ArticleModel>> getRecentArticles() async {
+    try {
+      final response = await _supabase
+          .from(AppConstants.viewArticlesWithDetails)
+          .select()
+          .order('published_at', ascending: false)
+          .limit(AppConstants.feedPageSize);
+
+      return (response as List)
+          .map((e) => ArticleModel.fromSupabaseJson(e as Map<String, dynamic>))
           .toList();
     } catch (e) {
       throw AppError.fromSupabase(e);
@@ -121,7 +138,7 @@ class FeedRepository {
         .stream(primaryKey: ['id'])
         .gte('published_at', startOfDay.toIso8601String())
         .order('published_at', ascending: false)
-        .map((list) => list.map((e) => ArticleModel.fromJson(e)).toList());
+        .map((list) => list.map((e) => ArticleModel.fromSupabaseJson(e)).toList());
   }
 
   // Pour le service de notifications : nouveaux articles uniquement
@@ -151,7 +168,7 @@ class FeedRepository {
           data['updated_at'] ??= data['published_at'];
           data['reaction_counts'] ??= <String, dynamic>{};
 
-          controller.add(ArticleModel.fromJson(data));
+          controller.add(ArticleModel.fromSupabaseJson(data));
         } catch (e) {
           print('ERREUR watchNewArticles fromJson: $e');
         }

@@ -197,7 +197,16 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
                 ],
               ),
             ),
-            const SizedBox(height: AppSpacing.xxl),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton(
+                onPressed: () => context.push(
+                  AppRoutes.resetPassword,
+                  extra: _emailController.text.trim(),
+                ),
+                child: Text(context.l10n.translate('forgot_password')),
+              ),
+            ),
             if (error != null)
               Container(
                 padding: AppSpacing.cardPadding,

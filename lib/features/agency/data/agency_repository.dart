@@ -301,7 +301,7 @@ class AgencyRepository {
           .order('published_at', ascending: false);
 
       return (response as List)
-          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .map((e) => ArticleModel.fromSupabaseJson(e as Map<String, dynamic>))
           .toList();
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);

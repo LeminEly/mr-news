@@ -1,9 +1,7 @@
 // lib/features/notifications/notification_listener_provider.dart
 
-import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/services/notification_service.dart';
-import '../../../shared/models/article_model.dart';
+import '../../core/services/notification_service.dart';
 import '../feed/providers/feed_providers.dart'; // ← import correct
 
 final notificationListenerProvider = Provider<void>((ref) {

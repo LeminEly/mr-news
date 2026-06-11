@@ -34,6 +34,20 @@ class ArticleModel with _$ArticleModel {
 
   factory ArticleModel.fromJson(Map<String, dynamic> json) =>
       _$ArticleModelFromJson(json);
+
+  /// Safe factory for Supabase responses where some fields may be missing.
+  /// Falls back to [publishedAt] if [created_at] is not present.
+  factory ArticleModel.fromSupabaseJson(Map<String, dynamic> json) {
+    // Ensure created_at has a fallback
+    if (json['created_at'] == null) {
+      json['created_at'] = json['published_at'];
+    }
+    // Ensure reaction_counts has a fallback
+    if (json['reaction_counts'] == null) {
+      json['reaction_counts'] = <String, dynamic>{};
+    }
+    return _$ArticleModelImpl.fromJson(json);
+  }
 }
 
 // Helpers

@@ -8,7 +8,6 @@ import 'package:gap/gap.dart';
 
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/models/article_model.dart';
-import '../providers/feed_providers.dart';
 import '../../../app/router.dart';
 import '../../../main.dart';
 
@@ -31,7 +30,7 @@ class ArticleCard extends ConsumerWidget {
         color: Theme.of(context).cardTheme.color,
         borderRadius: AppRadius.cardRadius,
         boxShadow: AppShadows.card,
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       child: ClipRRect(
         borderRadius: AppRadius.cardRadius,
@@ -119,7 +118,7 @@ class ArticleCard extends ConsumerWidget {
                           const CircleAvatar(
                             radius: 12,
                             backgroundColor: AppColors.primarySurface,
-                            child: Icon(Icons.business, size: 14, color: AppColors.primary),
+                            child: const Icon(Icons.business, size: 14, color: AppColors.primary),
                           ),
                         const Gap(AppSpacing.sm),
                         Expanded(
@@ -186,9 +185,9 @@ class _CategoryBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: AppRadius.chipRadius,
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
