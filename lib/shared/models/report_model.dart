@@ -22,30 +22,3 @@ class ReportModel with _$ReportModel {
       _$ReportModelFromJson(json);
 }
 
-extension ReportReasonX on ReportReason {
-  String get labelFr {
-    switch (this) {
-      case ReportReason.spam:
-        return 'Spam';
-      case ReportReason.falseInfo:
-        return 'Fausse information';
-      case ReportReason.offensive:
-        return 'Contenu offensant';
-      case ReportReason.other:
-        return 'Autre';
-    }
-  }
-
-  String get labelAr {
-    switch (this) {
-      case ReportReason.spam:
-        return 'رسائل مزعجة';
-      case ReportReason.falseInfo:
-        return 'معلومة مزيفة';
-      case ReportReason.offensive:
-        return 'محتوى مسيء';
-      case ReportReason.other:
-        return 'أخرى';
-    }
-  }
-}

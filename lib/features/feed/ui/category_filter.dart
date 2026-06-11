@@ -78,7 +78,7 @@ class _CategoryChip extends StatelessWidget {
         avatar: icon != null ? Text(icon!) : null,
         selected: isSelected,
         onSelected: (_) => onTap(),
-        selectedColor: accentColor?.withOpacity(0.2) ?? AppColors.primarySurface,
+        selectedColor: accentColor?.withValues(alpha: 0.2) ?? AppColors.primarySurface,
         checkmarkColor: accentColor ?? AppColors.primary,
         labelStyle: AppTextStyles.labelSmall.copyWith(
           color: isSelected 

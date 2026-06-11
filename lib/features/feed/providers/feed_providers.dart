@@ -101,6 +101,9 @@ final feedArticlesProvider = FutureProvider.autoDispose<List<ArticleModel>>((ref
   }
 
   if (articles.isEmpty) {
+    if (category != null) {
+      return repo.getArticlesByCategory(categoryId: category, date: null);
+    }
     return repo.getRecentArticles();
   }
   return articles;

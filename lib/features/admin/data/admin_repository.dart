@@ -278,7 +278,7 @@ class AdminRepository {
       
       return (rows as List).map((row) {
         final data = Map<String, dynamic>.from(row);
-        return ArticleModel.fromJson(data);
+        return ArticleModel.fromSupabaseJson(data);
       }).toList();
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);

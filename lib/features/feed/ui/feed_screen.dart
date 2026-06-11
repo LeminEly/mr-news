@@ -58,10 +58,10 @@ class FeedScreen extends ConsumerWidget {
 
             SliverToBoxAdapter(
               child: Column(
-                children: [
-                  const DateBanner(),
-                  const CategoryFilter(),
-                  const Gap(AppSpacing.sm),
+                children: const [
+                  DateBanner(),
+                  CategoryFilter(),
+                  Gap(AppSpacing.sm),
                 ],
               ),
             ),
@@ -114,7 +114,7 @@ class _LoadingState extends StatelessWidget {
           children: List.generate(3, (index) => Container(
             height: 280,
             margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: AppRadius.cardRadius,
             ),
@@ -166,7 +166,7 @@ class _ErrorState extends StatelessWidget {
           children: [
             const Icon(Icons.error_outline, size: 48, color: AppColors.error),
             const Gap(AppSpacing.md),
-            Text(
+            const Text(
               'Oups ! Une erreur est survenue',
               style: AppTextStyles.headlineSmall,
               textAlign: TextAlign.center,
