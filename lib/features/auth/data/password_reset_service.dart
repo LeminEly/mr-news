@@ -37,9 +37,12 @@ class PasswordResetService {
     required String token,
   }) async {
     try {
+      final debugToken = token.trim();
+      debugPrint('[PasswordReset] verifyCode: email="$email" token="$debugToken"');
+
       await _client.auth.verifyOTP(
         email: email.trim(),
-        token: token.trim(),
+        token: debugToken,
         type: OtpType.recovery,
       );
     } on AuthApiException catch (e) {
@@ -48,6 +51,14 @@ class PasswordResetService {
       throw _mapAuthError(e);
     } catch (e) {
       debugPrint('[PasswordReset] verifyCode error: $e');
+      // Si c'est une AuthException, on a le message détaillé
+      if (e is AuthException) {
+        debugPrint('[PasswordReset] verifyCode AuthException details: '
+            'message="${e.message}" statusCode="${e.statusCode}" code="${e.code}"');
+        throw _mapAuthError(
+          AuthApiException(e.message, code: e.code),
+        );
+      }
       throw 'Code invalide ou expiré. Veuillez réessayer.';
     }
   }
@@ -68,25 +79,51 @@ class PasswordResetService {
     }
   }
 
+  /// Mappe une [AuthApiException] Supabase en message utilisateur en français.
   String _mapAuthError(AuthApiException e) {
     final msg = e.message.toLowerCase();
-    if (e.code == 'otp_expired' ||
-        msg.contains('expired') ||
-        msg.contains('invalid') && msg.contains('token') ||
-        msg.contains('otp')) {
+    final code = e.code;
+
+    debugPrint('[PasswordReset] _mapAuthError: code="$code" message="$msg"');
+
+    // --- Rate limit (doit être vérifié AVANT les erreurs OTP) ---
+    if (code == 'over_email_send_rate_limit' ||
+        msg.contains('rate limit') ||
+        msg.contains('too many requests') ||
+        msg.contains('trop de tentatives')) {
+      return 'Trop de tentatives. Veuillez patienter 30 secondes avant de réessayer.';
+    }
+
+    // --- OTP expiré ---
+    if (code == 'otp_expired') {
+      return 'Le code a expiré. Veuillez en demander un nouveau.';
+    }
+
+    // --- OTP invalide (code erroné) ---
+    if (code == 'otp_not_found') {
+      return 'Code invalide. Vérifiez le code saisi et réessayez.';
+    }
+
+    // --- Erreurs génériques liées au jeton/OTP ---
+    if ((code?.contains('otp') ?? false) || (code?.contains('token') ?? false) ||
+        msg.contains('otp') || msg.contains('token')) {
+      if (msg.contains('expired') || msg.contains('expiré')) {
+        return 'Le code a expiré. Veuillez en demander un nouveau.';
+      }
+      if (msg.contains('invalid') || msg.contains('invalide')) {
+        return 'Code invalide. Vérifiez le code reçu par email et réessayez.';
+      }
       return 'Code invalide ou expiré. Veuillez en demander un nouveau.';
     }
-    if (e.code == 'weak_password' ||
+
+    // --- Mot de passe trop faible ---
+    if (code == 'weak_password' ||
         msg.contains('weak') ||
         msg.contains('at least') ||
         msg.contains('password should')) {
       return 'Mot de passe trop faible (6 caractères minimum).';
     }
-    if (e.code == 'over_email_send_rate_limit' ||
-        msg.contains('rate limit') ||
-        msg.contains('too many')) {
-      return 'Trop de tentatives. Veuillez patienter avant de réessayer.';
-    }
+
     return 'Une erreur est survenue : ${e.message}';
   }
 }

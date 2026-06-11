@@ -466,29 +466,10 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
 
                     child: TextButton(
 
-                      onPressed: () {
-
-                        ScaffoldMessenger.of(context).showSnackBar(
-
-                          SnackBar(
-
-                            backgroundColor: AppColors.info,
-
-                            content: Text(
-
-                              l10n.t('coming_soon'),
-
-                              style: AppTextStyles.bodyMedium.copyWith(
-
-                                  color: AppColors.textOnPrimary),
-
-                            ),
-
-                          ),
-
-                        );
-
-                      },
+                      onPressed: () => context.push(
+                        AppRoutes.resetPassword,
+                        extra: _emailController.text.trim(),
+                      ),
 
                       child: Text(
 

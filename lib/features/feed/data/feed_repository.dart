@@ -94,6 +94,23 @@ class FeedRepository {
     }
   }
 
+  // Obtenir les articles les plus récents sans filtre de date
+  Future<List<ArticleModel>> getRecentArticles() async {
+    try {
+      final response = await _supabase
+          .from(AppConstants.viewArticlesWithDetails)
+          .select()
+          .order('published_at', ascending: false)
+          .limit(AppConstants.feedPageSize);
+
+      return (response as List)
+          .map((e) => ArticleModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } catch (e) {
+      throw AppError.fromSupabase(e);
+    }
+  }
+
   // Charger les catégories actives
   Future<List<CategoryModel>> getCategories() async {
     try {

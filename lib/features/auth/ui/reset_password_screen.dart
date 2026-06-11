@@ -183,7 +183,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             keyboardType: TextInputType.number,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
+              LengthLimitingTextInputFormatter(8),
             ],
             decoration: InputDecoration(
               labelText: l10n.translate('reset_code_label'),
@@ -191,7 +191,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             ),
             validator: (v) {
               if (v == null || v.trim().isEmpty) return l10n.translate('required_field');
-              if (v.trim().length < 6) return l10n.translate('reset_code_hint');
+              if (v.trim().length < 8) return l10n.translate('reset_code_hint');
               return null;
             },
           ),

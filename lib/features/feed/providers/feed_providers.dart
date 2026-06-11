@@ -93,10 +93,17 @@ final feedArticlesProvider = FutureProvider.autoDispose<List<ArticleModel>>((ref
   final category = ref.watch(selectedCategoryProvider);
   final repo     = ref.watch(feedRepositoryProvider);
 
+  List<ArticleModel> articles;
   if (category != null) {
-    return repo.getArticlesByCategory(categoryId: category, date: date);
+    articles = await repo.getArticlesByCategory(categoryId: category, date: date);
+  } else {
+    articles = await repo.getArticlesByDate(date);
   }
-  return repo.getArticlesByDate(date);
+
+  if (articles.isEmpty) {
+    return repo.getRecentArticles();
+  }
+  return articles;
 });
 
 // Catégories (mise en cache)
