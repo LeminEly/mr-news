@@ -118,7 +118,7 @@ class AdminRepository {
           .from('reports')
           .select('*, articles(title)')
           .eq('status', 'pending')
-          .order('created_at');
+          .order('created_at', ascending: false);
       return rows as List<dynamic>;
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);

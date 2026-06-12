@@ -89,10 +89,35 @@ final routerProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final location = state.matchedLocation;
 
+      // Guard for administration area
+      if (location.startsWith('/admin')) {
+        if (location == AppRoutes.adminLogin) {
+          return null;
+        }
+        if (!bypassAdminAuth) {
+          final user = Supabase.instance.client.auth.currentUser;
+          if (user == null || user.userMetadata?['role'] != 'admin') {
+            return AppRoutes.adminLogin;
+          }
+        }
+        return null;
+      }
+
+      // Guard for agency portal
+      if (location.startsWith('/agency')) {
+        if (location == AppRoutes.agencyLogin ||
+            location == AppRoutes.agencyRegister) {
+          return null;
+        }
+        final user = Supabase.instance.client.auth.currentUser;
+        if (user == null) {
+          return AppRoutes.agencyLogin;
+        }
+        return null;
+      }
+
       // Ces routes ne doivent JAMAIS être redirigées par ce guard global.
-      if (location.startsWith('/agency') ||
-          location.startsWith('/admin') ||
-          location == AppRoutes.feed ||
+      if (location == AppRoutes.feed ||
           location == AppRoutes.onboarding ||
           location == AppRoutes.articleWebView ||
           location == AppRoutes.splash ||

@@ -81,7 +81,7 @@ class ReaderDrawer extends ConsumerWidget {
                   leading: const Icon(Icons.admin_panel_settings_outlined, color: AppColors.accent),
                   title: Text(isAr ? 'الإدارة' : 'Administration'),
                   subtitle: Text(isAr ? 'إدارة المنصة' : 'Gérer la plateforme'),
-                  onTap: () => context.push(AppRoutes.adminDashboard),
+                  onTap: () => context.push(AppRoutes.adminLogin),
                 ),
 
                 const Divider(),

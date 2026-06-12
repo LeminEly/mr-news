@@ -64,6 +64,10 @@ class _AgencyLoginScreenState extends State<AgencyLoginScreen>
 
     super.initState();
 
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Supabase.instance.client.auth.signOut();
+    });
+
     _tapCtrl = AnimationController(
 
       vsync: this,

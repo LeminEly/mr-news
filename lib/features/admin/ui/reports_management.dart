@@ -43,14 +43,40 @@ class ReportsManagementScreen extends ConsumerWidget {
               );
             }
 
-            return ListView.separated(
+            return ListView(
               padding: AppSpacing.pagePadding,
-              itemCount: reports.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
-              itemBuilder: (context, index) {
-                final report = reports[index];
-                return _ReportCard(report: report);
-              },
+              children: [
+                if (reports.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Text(
+                      'Derniers signalements (Top 5)',
+                      style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ...reports.take(5).map((report) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _ReportCard(report: report),
+                      )),
+                ],
+                if (reports.length > 5) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    child: Divider(height: 1),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Text(
+                      'Autres signalements en attente',
+                      style: AppTextStyles.headlineSmall.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  ...reports.skip(5).map((report) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                        child: _ReportCard(report: report),
+                      )),
+                ],
+              ],
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -95,6 +121,15 @@ class _ReportCard extends StatelessWidget {
               ],
             ),
             const Divider(height: AppSpacing.xl),
+            
+            Text('Article:', style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+            Text(report['articles']?['title'] ?? 'Titre inconnu', style: AppTextStyles.bodyMedium),
+            const SizedBox(height: AppSpacing.md),
+            
+            Text('Utilisateur:', style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold)),
+            Text(report['user_id'] != null ? 'Utilisateur Connecté' : 'Appareil: ${report['device_id'] ?? 'Inconnu'}', style: AppTextStyles.bodyMedium),
+            const SizedBox(height: AppSpacing.md),
+
             Text(
               'Raison:',
               style: AppTextStyles.labelSmall.copyWith(fontWeight: FontWeight.bold),

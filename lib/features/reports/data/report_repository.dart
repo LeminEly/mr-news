@@ -17,11 +17,15 @@ class ReportRepository {
     try {
       final deviceId = await DeviceIdService.getDeviceId();
 
+      final user = _supabase.auth.currentUser;
+
       // La contrainte UNIQUE empeche le double signalement par appareil
       await _supabase.from(AppConstants.tableReports).insert({
         'article_id': articleId,
         'device_id': deviceId,
+        'user_id': user?.id,
         'reason': reason.name,
+        'status': 'pending',
       });
     } catch (e) {
       // Code 23505 = violation UNIQUE -> déja signalé

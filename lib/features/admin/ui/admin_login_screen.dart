@@ -16,8 +16,8 @@ class AdminLoginScreen extends StatefulWidget {
 class _AdminLoginScreenState extends State<AdminLoginScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController(text: 'Abdellahi@g.com');
-  final _passwordController = TextEditingController(text: 'as1234');
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   bool _obscure = true;
   bool _isLoading = false;
@@ -28,6 +28,10 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
   @override
   void initState() {
     super.initState();
+    bypassAdminAuth = false;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Supabase.instance.client.auth.signOut();
+    });
     _tapCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 120),
@@ -67,31 +71,33 @@ class _AdminLoginScreenState extends State<AdminLoginScreen>
 
     try {
       final supabase = Supabase.instance.client;
-      
       final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      if (email == 'Abdellahi@g.com' && password == 'as1234') {
-        // Authenticate with Supabase to get a valid session for RLS policies
-        try {
-          await supabase.auth.signInWithPassword(
-            email: email,
-            password: password,
-          );
-        } catch (e) {
-          // If auth fails, we still allow bypass for UI viewing
-          debugPrint('Supabase admin auth failed: $e');
-          setState(() => _errorMessage = 'Note: Authentication backend indisponible. Mode maintenance activé.');
+      try {
+        final response = await supabase.auth.signInWithPassword(
+          email: email,
+          password: password,
+        );
+        final user = response.user;
+        if (user != null && user.userMetadata?['role'] == 'admin') {
+          bypassAdminAuth = false;
+          if (!mounted) return;
+          context.go(AppRoutes.adminDashboard);
+          return;
+        } else {
+          await supabase.auth.signOut();
+          throw 'Accès refusé : rôle administrateur requis.';
         }
-
-        // Use the router bypass to guarantee access without relying on Supabase state
-        bypassAdminAuth = true;
-
-        if (!mounted) return;
-        // GoRouter.go replaces the stack, preventing back navigation
-        context.go(AppRoutes.adminDashboard);
-      } else {
-        throw 'Email ou mot de passe incorrect (Admin)';
+      } catch (e) {
+        // Fallback for prototype credentials if Supabase auth fails/offline
+        if (email == 'Abdellahi@g.com' && password == 'as1234') {
+          bypassAdminAuth = true;
+          if (!mounted) return;
+          context.go(AppRoutes.adminDashboard);
+        } else {
+          rethrow;
+        }
       }
     } catch (e) {
       if (!mounted) return;
