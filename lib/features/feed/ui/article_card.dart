@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gap/gap.dart';
+import '../../reports/ui/report_bottom_sheet.dart';
+import '../providers/feed_providers.dart';
 
 import '../../../shared/theme/app_theme.dart';
 import '../../../shared/models/article_model.dart';
@@ -74,7 +76,8 @@ class ArticleCard extends ConsumerWidget {
               Padding(
                 padding: AppSpacing.cardPadding,
                 child: Column(
-                  crossAxisAlignment: isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  crossAxisAlignment:
+                      isRtl ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
                     // Meta: Category & Date
                     Row(
@@ -112,13 +115,15 @@ class ArticleCard extends ConsumerWidget {
                         if (article.agencyLogoUrl != null)
                           CircleAvatar(
                             radius: 12,
-                            backgroundImage: CachedNetworkImageProvider(article.agencyLogoUrl!),
+                            backgroundImage: CachedNetworkImageProvider(
+                                article.agencyLogoUrl!),
                           )
                         else
                           const CircleAvatar(
                             radius: 12,
                             backgroundColor: AppColors.primarySurface,
-                            child: const Icon(Icons.business, size: 14, color: AppColors.primary),
+                            child: const Icon(Icons.business,
+                                size: 14, color: AppColors.primary),
                           ),
                         const Gap(AppSpacing.sm),
                         Expanded(
@@ -137,10 +142,37 @@ class ArticleCard extends ConsumerWidget {
 
                         // Share Action
                         IconButton(
-                          onPressed: () => Share.share('${article.title}\n\n${article.sourceUrl}'),
+                          onPressed: () => Share.share(
+                              '${article.title}\n\n${article.sourceUrl}'),
                           icon: const Icon(Icons.share_outlined, size: 20),
                           color: AppColors.textSecondary,
                           visualDensity: VisualDensity.compact,
+                        ),
+
+                        Consumer(
+                          builder: (context, ref, _) {
+                            final hasReported =
+                                ref.watch(hasReportedProvider(article.id));
+                            return hasReported.when(
+                              data: (reported) => IconButton(
+                                onPressed: reported
+                                    ? null
+                                    : () => ReportBottomSheet.show(
+                                        context, article.id),
+                                icon: Icon(
+                                  reported ? Icons.flag : Icons.flag_outlined,
+                                  size: 20,
+                                ),
+                                color: reported
+                                    ? AppColors.error
+                                    : AppColors.textSecondary,
+                                visualDensity: VisualDensity.compact,
+                                tooltip: reported ? 'Déjà signalé' : 'Signaler',
+                              ),
+                              loading: () => const SizedBox(width: 40),
+                              error: (_, __) => const SizedBox(width: 40),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -159,9 +191,13 @@ class ArticleCard extends ConsumerWidget {
     final difference = now.difference(date);
 
     if (difference.inMinutes < 60) {
-      return lang == 'ar' ? 'منذ ${difference.inMinutes} د' : 'Il y a ${difference.inMinutes} min';
+      return lang == 'ar'
+          ? 'منذ ${difference.inMinutes} د'
+          : 'Il y a ${difference.inMinutes} min';
     } else if (difference.inHours < 24) {
-      return lang == 'ar' ? 'منذ ${difference.inHours} س' : 'Il y a ${difference.inHours} h';
+      return lang == 'ar'
+          ? 'منذ ${difference.inHours} س'
+          : 'Il y a ${difference.inHours} h';
     } else {
       return DateFormat.MMMd(lang).format(date);
     }
@@ -198,7 +234,8 @@ class _CategoryBadge extends StatelessWidget {
           ],
           Text(
             label,
-            style: AppTextStyles.labelSmall.copyWith(color: color, fontWeight: FontWeight.bold),
+            style: AppTextStyles.labelSmall
+                .copyWith(color: color, fontWeight: FontWeight.bold),
           ),
         ],
       ),
@@ -230,7 +267,8 @@ class _ReactionsSummary extends StatelessWidget {
           const Gap(4),
           Text(
             '$total',
-            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textSecondary),
+            style: AppTextStyles.labelSmall
+                .copyWith(color: AppColors.textSecondary),
           ),
         ],
       ),

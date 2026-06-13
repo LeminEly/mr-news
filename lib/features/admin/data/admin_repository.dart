@@ -26,56 +26,52 @@ class AdminRepository {
   AdminRepository({required SupabaseClient client}) : _client = client;
 
   final SupabaseClient _client;
-  final String _apiBaseUrl = 'http://10.0.2.2:8080/api/admin/agencies'; // Adjusted for Android Emulator
+  final String _apiBaseUrl =
+      'http://10.0.2.2:8080/api/admin/agencies'; // Adjusted for Android Emulator
 
   Future<Map<String, dynamic>> getGlobalStats() async {
     try {
       final user = _client.auth.currentUser;
-      debugPrint('AdminRepository: Current User Role = ${user?.userMetadata?['role']}');
+      debugPrint(
+          'AdminRepository: Current User Role = ${user?.userMetadata?['role']}');
 
       // Fetch pending agencies
-      debugPrint('AdminRepository: Fetching pending agencies from ${Env.appSupabaseUrl}...');
+      debugPrint(
+          'AdminRepository: Fetching pending agencies from ${Env.appSupabaseUrl}...');
       final pendingAgenciesRes = await _client
           .from('agencies')
           .select('id, name, status')
           .eq('status', 'pending');
-      debugPrint('AdminRepository: Found ${pendingAgenciesRes.length} pending agencies');
-      
+      debugPrint(
+          'AdminRepository: Found ${pendingAgenciesRes.length} pending agencies');
+
       // Fetch pending reports
       final pendingReportsRes = await _client
           .from('reports')
           .select('id, status')
           .eq('status', 'pending');
-      
+
       // Fetch active articles
-      final activeArticlesRes = await _client
-          .from('articles')
-          .select('id')
-          .eq('is_active', true);
-      
+      final activeArticlesRes =
+          await _client.from('articles').select('id').eq('is_active', true);
+
       // Fetch categories
-      final categoriesRes = await _client
-          .from('categories')
-          .select('id');
-      
+      final categoriesRes = await _client.from('categories').select('id');
+
       // Fetch total agencies
-      final allAgenciesRes = await _client
-          .from('agencies')
-          .select('id, name, status');
+      final allAgenciesRes =
+          await _client.from('agencies').select('id, name, status');
 
       // Fetch validated agencies
-      final validatedAgenciesRes = await _client
-          .from('agencies')
-          .select('id')
-          .eq('status', 'approved');
+      final validatedAgenciesRes =
+          await _client.from('agencies').select('id').eq('status', 'approved');
 
       // Fetch rejected agencies
-      final rejectedAgenciesRes = await _client
-          .from('agencies')
-          .select('id')
-          .eq('status', 'rejected');
+      final rejectedAgenciesRes =
+          await _client.from('agencies').select('id').eq('status', 'rejected');
 
-      debugPrint('AdminStats Results: Pending=${pendingAgenciesRes.length}, Total=${allAgenciesRes.length}, Reports=${pendingReportsRes.length}');
+      debugPrint(
+          'AdminStats Results: Pending=${pendingAgenciesRes.length}, Total=${allAgenciesRes.length}, Reports=${pendingReportsRes.length}');
 
       return {
         'pending_agencies': pendingAgenciesRes.length,
@@ -114,11 +110,15 @@ class AdminRepository {
 
   Future<List<dynamic>> getPendingReports() async {
     try {
-      final rows = await _client
-          .from('reports')
-          .select('*, articles(title)')
-          .eq('status', 'pending')
-          .order('created_at', ascending: false);
+      final rows = await _client.from('reports').select('''
+      *,
+      articles (
+        title,
+        source_url
+      )
+    ''').eq('status', 'pending').order('created_at', ascending: false);
+      print('REPORTS: ${rows.length} trouvés'); // ← ajoute
+      print(rows); // ← ajoute
       return rows as List<dynamic>;
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);
@@ -132,14 +132,14 @@ class AdminRepository {
   Future<List<AgencyModel>> getAgencies({String? status}) async {
     try {
       var query = _client.from('agencies').select();
-      
+
       if (status != null && status.isNotEmpty) {
         query = query.eq('status', status.toLowerCase().trim());
       }
-      
-      final rows = await query.order('created_at', ascending: false);
-      debugPrint('getAgencies result: ${rows.length} agencies found (status filter: $status)');
 
+      final rows = await query.order('created_at', ascending: false);
+      debugPrint(
+          'getAgencies result: ${rows.length} agencies found (status filter: $status)');
 
       return (rows as List)
           .map((e) => AgencyModel.fromSupabase(e as Map<String, dynamic>))
@@ -163,15 +163,16 @@ class AdminRepository {
     try {
       // Try calling backend API if available
       try {
-        final response = await http.put(Uri.parse('$_apiBaseUrl/$agencyId/approve'))
+        final response = await http
+            .put(Uri.parse('$_apiBaseUrl/$agencyId/approve'))
             .timeout(const Duration(seconds: 3));
         if (response.statusCode != 200 && response.statusCode != 204) {
-           debugPrint('Backend API approve failed: ${response.statusCode}');
+          debugPrint('Backend API approve failed: ${response.statusCode}');
         }
       } catch (e) {
         debugPrint('Backend API unreachable: $e');
       }
-      
+
       await _updateAgencyStatus(
         agencyId: agencyId,
         status: 'approved',
@@ -190,10 +191,11 @@ class AdminRepository {
   }) async {
     try {
       try {
-        final response = await http.put(Uri.parse('$_apiBaseUrl/$agencyId/reject'))
+        final response = await http
+            .put(Uri.parse('$_apiBaseUrl/$agencyId/reject'))
             .timeout(const Duration(seconds: 3));
         if (response.statusCode != 200 && response.statusCode != 204) {
-           debugPrint('Backend API reject failed: ${response.statusCode}');
+          debugPrint('Backend API reject failed: ${response.statusCode}');
         }
       } catch (e) {
         debugPrint('Backend API unreachable: $e');
@@ -252,7 +254,8 @@ class AdminRepository {
         'reject_reason': rejectReason,
       };
 
-      if (status.toLowerCase() == 'approved' || status.toLowerCase() == 'accepted') {
+      if (status.toLowerCase() == 'approved' ||
+          status.toLowerCase() == 'accepted') {
         data['status'] = 'approved'; // Ensure it's 'approved' for the DB
         data['validated_at'] = validatedAt?.toUtc().toIso8601String();
       }
@@ -275,7 +278,7 @@ class AdminRepository {
           .from('articles')
           .select('*, agencies(name)')
           .order('published_at', ascending: false);
-      
+
       return (rows as List).map((row) {
         final data = Map<String, dynamic>.from(row);
         return ArticleModel.fromSupabaseJson(data);
@@ -289,8 +292,7 @@ class AdminRepository {
     try {
       await _client
           .from('articles')
-          .update({'is_active': isActive})
-          .eq('id', articleId);
+          .update({'is_active': isActive}).eq('id', articleId);
     } on PostgrestException catch (error) {
       throw _mapPostgrestError(error);
     }
@@ -329,7 +331,7 @@ class AdminRepository {
           .select('id, name, status, created_at, validated_at')
           .not('status', 'eq', 'pending')
           .order('validated_at', ascending: false);
-      
+
       return List<Map<String, dynamic>>.from(rows);
     } catch (e) {
       debugPrint('Error in getAgencyActivityByDate: $e');
@@ -339,17 +341,13 @@ class AdminRepository {
 
   Future<List<Map<String, dynamic>>> getAllCategories() async {
     try {
-      final rows = await _client
-          .from('categories')
-          .select()
-          .order('name_fr');
+      final rows = await _client.from('categories').select().order('name_fr');
       return List<Map<String, dynamic>>.from(rows);
     } catch (e) {
       debugPrint('Error in getAllCategories: $e');
       return [];
     }
   }
-
 
   Future<Map<String, dynamic>> getCategoryAnalytics() async {
     try {
@@ -359,14 +357,14 @@ class AdminRepository {
           .from('articles')
           .select('category_id, categories(name_fr, name_ar, icon)')
           .gte('published_at', '${today}T00:00:00Z');
-      
+
       final activeToday = <String, Map<String, dynamic>>{};
       for (var art in (articlesToday as List)) {
         final catId = art['category_id'] as String?;
         if (catId == null) continue;
         final catData = art['categories'] as Map<String, dynamic>?;
         if (catData == null) continue;
-        
+
         if (!activeToday.containsKey(catId)) {
           activeToday[catId] = {
             'id': catId,
@@ -375,20 +373,24 @@ class AdminRepository {
             'icon': catData['icon'],
           };
         }
-        activeToday[catId]!['count'] = (activeToday[catId]!['count'] as int) + 1;
+        activeToday[catId]!['count'] =
+            (activeToday[catId]!['count'] as int) + 1;
       }
 
       // 2. Most Active Categories
-      final allCategories = await _client.from('categories').select('id, name_fr, icon');
+      final allCategories =
+          await _client.from('categories').select('id, name_fr, icon');
       final mostActive = (allCategories as List).map((cat) {
         return {
           'id': cat['id'],
           'name': cat['name_fr'],
           'icon': cat['icon'],
-          'engagement': (cat['name_fr'].length * 15) % 100, // Mock engagement score
+          'engagement':
+              (cat['name_fr'].length * 15) % 100, // Mock engagement score
         };
       }).toList();
-      mostActive.sort((a, b) => (b['engagement'] as int).compareTo(a['engagement'] as int));
+      mostActive.sort(
+          (a, b) => (b['engagement'] as int).compareTo(a['engagement'] as int));
 
       // 3. Activity Today (Detailed breakdown)
       // Already partially in activeToday, but we ensure it matches the user request format
@@ -406,6 +408,16 @@ class AdminRepository {
         'most_active': [],
         'activity_today': [],
       };
+    }
+  }
+
+  Future<void> deactivateArticle(String articleId) async {
+    try {
+      await _client
+          .from('articles')
+          .update({'is_active': false}).eq('id', articleId);
+    } on PostgrestException catch (error) {
+      throw _mapPostgrestError(error);
     }
   }
 }

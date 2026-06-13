@@ -4,7 +4,6 @@ import '../../../core/errors/app_error.dart';
 import '../../../core/utils/device_id.dart';
 import '../../../shared/models/models.dart';
 
-
 class ReportRepository {
   ReportRepository(this._supabase);
   final SupabaseClient _supabase;
@@ -23,7 +22,7 @@ class ReportRepository {
       await _supabase.from(AppConstants.tableReports).insert({
         'article_id': articleId,
         'device_id': deviceId,
-        'user_id': user?.id,
+        'user_id': user?.id, // ← supprimer cette ligne
         'reason': reason.name,
         'status': 'pending',
       });

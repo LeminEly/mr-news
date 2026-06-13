@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/feed_repository.dart';
+import 'package:flutter/material.dart';
 import '../../agency/data/agency_repository.dart';
 import '../../reactions/data/reaction_repository.dart';
 import '../../reports/data/report_repository.dart';
@@ -58,26 +59,30 @@ final reportRepositoryProvider = Provider<ReportRepository>((ref) {
 final adminRepositoryProvider = Provider<AdminRepository>((ref) {
   // IMPORTANT: Using the Service Role Key for Admin operations to bypass RLS
   // as requested. This ensures all agencies and reports are visible to admins.
-  const serviceRoleKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
+  const serviceRoleKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNiZnVsZG1zd2x1end4ZmRpcHd5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NjQxOTQ4MCwiZXhwIjoyMDkxOTk1NDgwfQ.BgyB813SUM9wx7GzZUnN7iTb5DEprZVfdxzhyzD1tVo';
   const url = 'https://cbfuldmswluzwxfdipwy.supabase.co';
-  
+
   final adminClient = SupabaseClient(url, serviceRoleKey);
   return AdminRepository(client: adminClient);
 });
 
-final adminStatsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+final adminStatsProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
   return ref.watch(adminRepositoryProvider).getGlobalStats();
 });
 
-final agencyActivityProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final agencyActivityProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   return ref.watch(adminRepositoryProvider).getAgencyActivityByDate();
 });
 
-final categoryAnalyticsProvider = FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
+final categoryAnalyticsProvider =
+    FutureProvider.autoDispose<Map<String, dynamic>>((ref) {
   return ref.watch(adminRepositoryProvider).getCategoryAnalytics();
 });
 
-// FEED STATE 
+// FEED STATE
 
 // Date sélectionnée dans le bandeau
 final selectedDateProvider = StateProvider<DateTime>((ref) {
@@ -86,29 +91,31 @@ final selectedDateProvider = StateProvider<DateTime>((ref) {
 
 // Catégorie filtre sélectionnée (null = toutes)
 final selectedCategoryProvider = StateProvider<String?>((ref) => null);
-
-// Articles du feed selon la date et catégorie sélectionnées
-final feedArticlesProvider = FutureProvider.autoDispose<List<ArticleModel>>((ref) async {
-  final date     = ref.watch(selectedDateProvider);
-  final category = ref.watch(selectedCategoryProvider);
-  final repo     = ref.watch(feedRepositoryProvider);
-
-  List<ArticleModel> articles;
-  if (category != null) {
-    articles = await repo.getArticlesByCategory(categoryId: category, date: date);
-  } else {
-    articles = await repo.getArticlesByDate(date);
-  }
-
-  if (articles.isEmpty) {
-    if (category != null) {
-      return repo.getArticlesByCategory(categoryId: category, date: null);
+// Provider pour initialiser la date au démarrage
+final feedInitProvider = FutureProvider.autoDispose<void>((ref) async {
+  final repo = ref.watch(feedRepositoryProvider);
+  final recent = await repo.getRecentArticles();
+  if (recent.isNotEmpty) {
+    final articleDate = recent.first.publishedAt;
+    final isToday = DateUtils.isSameDay(articleDate, DateTime.now());
+    if (!isToday) {
+      ref.read(selectedDateProvider.notifier).state = articleDate;
     }
-    return repo.getRecentArticles();
   }
-  return articles;
 });
 
+final feedArticlesProvider =
+    FutureProvider.autoDispose<List<ArticleModel>>((ref) async {
+  ref.watch(feedInitProvider); // ← déclenche l'init
+  final date = ref.watch(selectedDateProvider);
+  final category = ref.watch(selectedCategoryProvider);
+  final repo = ref.watch(feedRepositoryProvider);
+
+  if (category != null) {
+    return repo.getArticlesByCategory(categoryId: category, date: date);
+  }
+  return repo.getArticlesByDate(date);
+});
 // Catégories (mise en cache)
 final categoriesProvider = FutureProvider<List<CategoryModel>>((ref) async {
   return ref.watch(feedRepositoryProvider).getCategories();
@@ -121,8 +128,8 @@ final myReactionProvider = FutureProvider.autoDispose
 });
 
 // Si l'utilisateur a déja signalé un article
-final hasReportedProvider = FutureProvider.autoDispose
-    .family<bool, String>((ref, articleId) async {
+final hasReportedProvider =
+    FutureProvider.autoDispose.family<bool, String>((ref, articleId) async {
   return ref.watch(reportRepositoryProvider).hasReported(articleId);
 });
 
@@ -141,19 +148,22 @@ final myArticlesProvider = FutureProvider.autoDispose
 
 // ADMIN STATE
 
-
 final pendingAgenciesProvider = FutureProvider.autoDispose((ref) async {
-  return ref.watch(adminRepositoryProvider).getAgenciesByStatus(AgencyStatus.pending);
+  return ref
+      .watch(adminRepositoryProvider)
+      .getAgenciesByStatus(AgencyStatus.pending);
 });
 
 final pendingReportsProvider = FutureProvider.autoDispose((ref) async {
   return ref.watch(adminRepositoryProvider).getPendingReports();
 });
 
-final allAgenciesProvider = FutureProvider.autoDispose<List<AgencyModel>>((ref) async {
+final allAgenciesProvider =
+    FutureProvider.autoDispose<List<AgencyModel>>((ref) async {
   return ref.watch(adminRepositoryProvider).getAgencies();
 });
 
-final allCategoriesProvider = FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+final allCategoriesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
   return ref.watch(adminRepositoryProvider).getAllCategories();
 });
