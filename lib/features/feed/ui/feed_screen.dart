@@ -84,7 +84,7 @@ class FeedScreen extends ConsumerWidget {
                   ),
                 );
               },
-              loading: () => const SliverFillRemaining(
+              loading: () => const SliverToBoxAdapter(
                 child: _LoadingState(),
               ),
               error: (error, stack) => SliverFillRemaining(

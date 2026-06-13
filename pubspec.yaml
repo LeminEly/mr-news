@@ -48,7 +48,7 @@ dependencies:
 
   # UTILITIES
   uuid: ^4.4.0
-  intl: ^0.20.2
+  intl: ^0.19.0 # aligné sur flutter_localizations (SDK Flutter 3.29.x exige intl 0.19.0)
   url_launcher: ^6.3.0
   share_plus: ^10.0.0 # ✅ Préfixe ^ ajouté
   connectivity_plus: ^6.0.3
@@ -62,6 +62,10 @@ dependencies:
   http: ^1.6.0
   file_picker: ^11.0.2
 
+# Résout le conflit entre pdf (vector_math ^2.2.0) et flutter_test (épingle 2.1.4)
+dependency_overrides:
+  vector_math: ^2.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -74,10 +78,38 @@ dev_dependencies:
   flutter_launcher_icons: ^0.13.1
 
 flutter_launcher_icons:
+  # Source plein-cadre opaque (iOS/web/desktop/android legacy)
+  image_path: "assets/images/app_icon.png"
+
+  # --- Android ---
   android: "ic_launcher"
-  ios: true
-  image_path: "assets/images/logo.png"
   min_sdk_android: 21
+  # Icône adaptative (Android 8+) : fond de marque + logo dans la zone de sécurité
+  adaptive_icon_background: "#0E8B49"
+  adaptive_icon_foreground: "assets/images/app_icon_foreground.png"
+  # Variante monochrome (Android 13+ themed icons)
+  adaptive_icon_monochrome: "assets/images/app_icon_foreground.png"
+
+  # --- iOS --- (les icônes iOS ne tolèrent pas l'alpha : on aplatit sur le vert de marque)
+  ios: true
+  remove_alpha_ios: true
+  background_color_ios: "#0E8B49"
+
+  # --- Web ---
+  web:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    background_color: "#0E8B49"
+    theme_color: "#0E8B49"
+
+  # --- Desktop ---
+  windows:
+    generate: true
+    image_path: "assets/images/app_icon.png"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/images/app_icon.png"
 
 flutter:
   uses-material-design: true

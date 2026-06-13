@@ -356,7 +356,7 @@ class _AgencyRegisterScreenState extends State<AgencyRegisterScreen> {
               ),
               const SizedBox(height: AppSpacing.lg),
               DropdownButtonFormField<MediaType>(
-                initialValue: _mediaType,
+                value: _mediaType,
                 decoration: _decoration(
                   label: l10n.t('media_type'),
                   icon: Icons.category_outlined,
